@@ -3,11 +3,11 @@ import { workProjects } from "@/data/work";
 
 const WorkGrid = () => {
   return (
-    <section id="work" className="py-6 md:py-16 px-4 sm:px-5">
-      <div className="container mx-auto max-w-screen-sm md:max-w-6xl">
+    <section id="work" className="py-6 md:py-16 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-8 text-center">Our Work</h2>
 
-        <div className="max-w-[680px] md:max-w-none mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
           {workProjects.map((project) => (
             <Link
               key={project.slug}
