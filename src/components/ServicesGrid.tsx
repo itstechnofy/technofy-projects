@@ -29,8 +29,8 @@ const ServicesGrid = () => {
                 onClick={() => setSelectedService(isSelected ? null : service.slug)}
                 className="group block w-full text-left"
               >
-                <div className={`bg-card border rounded-lg p-4 md:p-8 transition-all hover:shadow-lg hover:-translate-y-1 h-full space-y-3 md:space-y-4 ${
-                  isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                <div className={`bg-card border-2 rounded-lg p-4 md:p-8 transition-all shadow-md hover:shadow-lg hover:-translate-y-1 h-full space-y-3 md:space-y-4 focus:outline-none focus:ring-0 ${
+                  isSelected ? 'border-[#6E56CF]' : 'border-transparent'
                 }`}>
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                     {Icon && <Icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />}

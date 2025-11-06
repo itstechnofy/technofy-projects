@@ -101,14 +101,14 @@ const ContactSection = () => {
                     key={channel.id}
                     type="button"
                     onClick={() => setSelectedChannel(channel.id)}
-                    className={`h-20 rounded-xl border p-4 flex items-center justify-center gap-2 transition-all ${
+                    className={`h-20 rounded-xl p-4 flex items-center justify-center gap-2 transition-all ${
                       selectedChannel === channel.id
-                        ? "bg-[#FF4EC410] border-[#FF4EC4] ring-2 ring-[#FF4EC4]"
-                        : "bg-white dark:bg-card border-neutral-200 dark:border-neutral-800 hover:border-violet-400 dark:hover:border-violet-500"
+                        ? "bg-white dark:bg-card border border-[#F74F8C]"
+                        : "bg-white dark:bg-card border border-[#E6E6E6] dark:border-neutral-800 hover:border-violet-400 dark:hover:border-violet-500"
                     }`}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium text-center">{channel.label}</span>
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${selectedChannel === channel.id ? "text-[#F74F8C]" : ""}`} />
+                    <span className={`text-sm font-medium text-center ${selectedChannel === channel.id ? "text-[#F74F8C]" : ""}`}>{channel.label}</span>
                   </button>
                 );
               })}
@@ -172,7 +172,7 @@ const ContactSection = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="h-11 md:h-12 text-[15px] w-full rounded-lg"
+                    className="h-11 md:h-12 text-[15px] w-full rounded-lg border-[#D6D6D6] focus:border-[#F74F8C] focus-visible:ring-0"
                     required
                   />
                 </div>
@@ -185,7 +185,7 @@ const ContactSection = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="h-11 md:h-12 text-[15px] w-full rounded-lg"
+                      className="h-11 md:h-12 text-[15px] w-full rounded-lg border-[#D6D6D6] focus:border-[#F74F8C] focus-visible:ring-0"
                       required
                     />
                   </div>
@@ -198,7 +198,7 @@ const ContactSection = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+63 XXX XXX XXXX"
-                    className="h-11 md:h-12 text-[15px] w-full rounded-lg"
+                    className="h-11 md:h-12 text-[15px] w-full rounded-lg border-[#D6D6D6] focus:border-[#F74F8C] focus-visible:ring-0"
                   />
                 </div>
               </div>
@@ -210,7 +210,7 @@ const ContactSection = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Tell us about your project..."
-                  className="min-h-[120px] text-[15px] rounded-lg"
+                  className="min-h-[120px] text-[15px] rounded-lg border-[#D6D6D6] focus:border-[#F74F8C] focus-visible:ring-0"
                   required
                 />
               </div>
@@ -221,7 +221,7 @@ const ContactSection = () => {
                   id="source"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  className="w-full h-11 md:h-12 px-3 text-[15px] border border-input rounded-lg bg-background"
+                  className="w-full h-11 md:h-12 px-3 text-[15px] border border-[#D6D6D6] rounded-lg bg-background focus:border-[#F74F8C] focus:outline-none"
                 >
                   <option value="">Select one...</option>
                   <option value="Facebook">Facebook</option>

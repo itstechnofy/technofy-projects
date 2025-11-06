@@ -50,19 +50,19 @@ const WeBelieveSection = () => {
   }, [prefersReducedMotion]);
 
   return (
-    <section id="we-believe" className="py-6 md:py-16 px-4 sm:px-5 bg-muted/30">
+    <section id="we-believe" className="py-6 md:py-16 px-4 sm:px-5 bg-transparent">
       <div className="container mx-auto max-w-screen-sm md:max-w-4xl">
-        <div className="space-y-3 md:space-y-4 text-left">
+        <div className="space-y-2 text-left">
           {lines.map((line, index) => (
             <p
               key={index}
               ref={(el) => (lineRefs.current[index] = el)}
-              className={`text-[28px] md:text-[44px] font-semibold md:leading-tight transition-all duration-500 ${
+              className={`text-xl md:text-2xl font-medium leading-relaxed transition-all duration-500 ${
                 prefersReducedMotion
                   ? "text-foreground"
                   : activeIndex === index
-                  ? "bg-gradient-to-r from-[#7C6FF9] to-[#FF4EC4] bg-clip-text text-transparent"
-                  : "text-[#C9C9C9]"
+                  ? "bg-gradient-to-r from-[#D4B9FF] to-[#FFB7DD] bg-clip-text text-transparent"
+                  : "text-[#BFBFBF]"
               }`}
             >
               {line}

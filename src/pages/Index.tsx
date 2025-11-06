@@ -2,6 +2,7 @@ import TopNavbar from "@/components/TopNavbar";
 import BottomNav from "@/components/BottomNav";
 import Hero from "@/components/Hero";
 import TrustedSection from "@/components/TrustedSection";
+import IntroVideo from "@/components/IntroVideo";
 import WorkGrid from "@/components/WorkGrid";
 import WeBelieveSection from "@/components/WeBelieveSection";
 import ServicesGrid from "@/components/ServicesGrid";
@@ -14,6 +15,7 @@ const Index = () => {
       <TopNavbar />
       <Hero />
       <TrustedSection />
+      <IntroVideo />
       <WorkGrid />
       <WeBelieveSection />
       <ServicesGrid />
