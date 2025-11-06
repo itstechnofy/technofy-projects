@@ -101,10 +101,10 @@ const ContactSection = () => {
                     key={channel.id}
                     type="button"
                     onClick={() => setSelectedChannel(channel.id)}
-                    className={`h-20 rounded-xl p-4 flex items-center justify-center gap-2 transition-all ${
+                    className={`h-20 rounded-xl border p-4 flex items-center justify-center gap-2 transition-all ${
                       selectedChannel === channel.id
                         ? "bg-[#FF4EC410] border-[#FF4EC4] ring-2 ring-[#FF4EC4]"
-                        : "bg-white dark:bg-card border border-neutral-200 dark:border-neutral-800 hover:border-violet-400 dark:hover:border-violet-500"
+                        : "bg-white dark:bg-card border-neutral-200 dark:border-neutral-800 hover:border-violet-400 dark:hover:border-violet-500"
                     }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />

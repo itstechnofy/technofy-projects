@@ -61,17 +61,17 @@ const TrustedSection = () => {
           {clients.map((client, index) => (
             <article
               key={`set1-${index}`}
-              className="w-[220px] h-[220px] md:w-[260px] md:h-[260px] shrink-0 rounded-2xl bg-white dark:bg-white shadow-sm p-6 flex flex-col items-center justify-center text-center"
+              className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] shrink-0 rounded-2xl bg-white p-4 flex flex-col items-center justify-center text-center"
             >
               <img
                 src={client.logo}
-                className="w-24 h-24 object-contain"
+                className="max-w-[80px] max-h-[80px] object-contain"
                 alt={client.name}
               />
-              <h3 className="mt-4 text-lg font-semibold text-neutral-900">
+              <h3 className="mt-4 text-base font-semibold text-neutral-900">
                 {client.name}
               </h3>
-              <p className="mt-1.5 text-sm text-neutral-500 leading-relaxed line-clamp-2">
+              <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
                 {client.description}
               </p>
             </article>
@@ -82,17 +82,17 @@ const TrustedSection = () => {
             {clients.map((client, index) => (
               <article
                 key={`set2-${index}`}
-                className="w-[220px] h-[220px] md:w-[260px] md:h-[260px] shrink-0 rounded-2xl bg-white dark:bg-white shadow-sm p-6 flex flex-col items-center justify-center text-center"
+                className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] shrink-0 rounded-2xl bg-white p-4 flex flex-col items-center justify-center text-center"
               >
                 <img
                   src={client.logo}
-                  className="w-24 h-24 object-contain"
+                  className="max-w-[80px] max-h-[80px] object-contain"
                   alt={client.name}
                 />
-                <h3 className="mt-4 text-lg font-semibold text-neutral-900">
+                <h3 className="mt-4 text-base font-semibold text-neutral-900">
                   {client.name}
                 </h3>
-                <p className="mt-1.5 text-sm text-neutral-500 leading-relaxed line-clamp-2">
+                <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
                   {client.description}
                 </p>
               </article>
@@ -112,12 +112,12 @@ const TrustedSection = () => {
         }
 
         .animate-marquee {
-          animation: marquee 18s linear infinite;
+          animation: marquee 14s linear infinite;
         }
 
-        @media (max-width: 640px) {
+        @media (prefers-reduced-motion: reduce) {
           .animate-marquee {
-            animation-duration: 24s;
+            animation-play-state: paused;
           }
         }
       `}</style>

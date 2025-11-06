@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import TopNavbar from "@/components/TopNavbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
+import { useEffect } from "react";
 
 const WorkDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const project = workProjects.find((p) => p.slug === slug);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
 
   if (!project) {
     return (
@@ -43,7 +48,7 @@ const WorkDetail = () => {
       <div className="container mx-auto px-6 py-12 max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/#work")}
+          onClick={() => navigate("/")}
           className="mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

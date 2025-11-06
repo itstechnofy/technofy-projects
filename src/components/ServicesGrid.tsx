@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
 import { services } from "@/data/services";
 import { Globe, Smartphone, Palette, Target, Cloud, Code } from "lucide-react";
+import { useState } from "react";
 
 const iconMap: Record<string, any> = {
   Globe,
@@ -12,6 +12,8 @@ const iconMap: Record<string, any> = {
 };
 
 const ServicesGrid = () => {
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+
   return (
     <section id="services" className="py-6 md:py-16 px-4 md:px-8">
       <div className="max-w-6xl mx-auto">
@@ -20,13 +22,16 @@ const ServicesGrid = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10">
           {services.map((service) => {
             const Icon = iconMap[service.icon];
+            const isSelected = selectedService === service.slug;
             return (
-              <Link
+              <button
                 key={service.slug}
-                to={`/services/${service.slug}`}
-                className="group block"
+                onClick={() => setSelectedService(isSelected ? null : service.slug)}
+                className="group block w-full text-left"
               >
-                <div className="bg-card border border-border rounded-lg p-4 md:p-8 transition-all hover:shadow-lg hover:-translate-y-1 h-full space-y-3 md:space-y-4">
+                <div className={`bg-card border rounded-lg p-4 md:p-8 transition-all hover:shadow-lg hover:-translate-y-1 h-full space-y-3 md:space-y-4 ${
+                  isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                }`}>
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                     {Icon && <Icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />}
                   </div>
@@ -37,7 +42,7 @@ const ServicesGrid = () => {
                     {service.shortDescription}
                   </p>
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
