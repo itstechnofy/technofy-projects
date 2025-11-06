@@ -9,14 +9,14 @@ const logos = [
 
 const LogoCarousel = () => {
   return (
-    <section className="py-20 overflow-hidden border-y border-border">
+    <section className="py-20 border-y border-border overflow-hidden">
       <div className="container mx-auto px-6">
         <h2 className="text-center text-sm uppercase tracking-wider text-muted-foreground mb-12">
           Trusted by Industry Leaders
         </h2>
         
-        <div className="relative">
-          <div className="flex animate-scroll">
+        <div className="relative overflow-hidden">
+          <div className="flex animate-scroll w-max">
             {[...logos, ...logos].map((logo, index) => (
               <div
                 key={index}
