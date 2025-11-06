@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-
 const lines = [
   "We believe that great digital experiences",
   "are built on a foundation of innovation,",
@@ -8,47 +6,6 @@ const lines = [
 ];
 
 const WeBelieveSection = () => {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const lineRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-
-  const prefersReducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-        if (visibleEntries.length > 0) {
-          const mostVisible = visibleEntries[0];
-          const index = lineRefs.current.findIndex(
-            (ref) => ref === mostVisible.target
-          );
-          if (index !== -1) {
-            setActiveIndex(index);
-          }
-        }
-      },
-      {
-        threshold: [0.2, 0.4, 0.6, 0.8],
-        rootMargin: "-10% 0px -10% 0px",
-      }
-    );
-
-    lineRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [prefersReducedMotion]);
-
   return (
     <section id="we-believe" className="py-6 md:py-16 px-4 sm:px-5 bg-transparent">
       <div className="container mx-auto max-w-screen-sm md:max-w-4xl">
@@ -56,13 +13,10 @@ const WeBelieveSection = () => {
           {lines.map((line, index) => (
             <p
               key={index}
-              ref={(el) => (lineRefs.current[index] = el)}
-              className={`text-xl md:text-2xl font-medium leading-relaxed transition-all duration-500 ${
-                prefersReducedMotion
-                  ? "text-foreground"
-                  : activeIndex === index
+              className={`text-xl md:text-2xl font-medium leading-relaxed ${
+                index === lines.length - 1
                   ? "bg-gradient-to-r from-[#B7A4D6] to-[#CC96B0] bg-clip-text text-transparent"
-                  : "text-[#C9C9C9]"
+                  : "text-[#C5C5C5]"
               }`}
             >
               {line}
