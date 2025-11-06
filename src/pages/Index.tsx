@@ -1,21 +1,25 @@
-import Navigation from "@/components/Navigation";
+import TopNavbar from "@/components/TopNavbar";
+import BottomNav from "@/components/BottomNav";
 import Hero from "@/components/Hero";
-import LogoCarousel from "@/components/LogoCarousel";
-import QuoteSection from "@/components/QuoteSection";
+import TrustedSection from "@/components/TrustedSection";
 import WorkGrid from "@/components/WorkGrid";
-import PhilosophySection from "@/components/PhilosophySection";
-import Services from "@/components/Services";
+import WeBelieveSection from "@/components/WeBelieveSection";
+import ServicesGrid from "@/components/ServicesGrid";
+import ContactSection from "@/components/ContactSection";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
-      <Navigation />
+    <div className="min-h-screen pb-28 md:pb-32">
+      <TopNavbar />
       <Hero />
-      <LogoCarousel />
-      <QuoteSection />
+      <TrustedSection />
       <WorkGrid />
-      <PhilosophySection />
-      <Services />
+      <WeBelieveSection />
+      <ServicesGrid />
+      <ContactSection />
+      <Footer />
+      <BottomNav />
     </div>
   );
 };
