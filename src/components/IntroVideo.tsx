@@ -9,7 +9,7 @@ const IntroVideo = () => {
   };
 
   return (
-    <section id="intro-video" className="py-2">
+    <section id="intro-video" className="py-2 mt-12 mb-12">
       <div className="max-w-5xl mx-auto px-4 md:px-6">
         <div className="relative aspect-video rounded-2xl shadow-md overflow-hidden bg-neutral-200 dark:bg-neutral-800">
           {/* Poster */}
