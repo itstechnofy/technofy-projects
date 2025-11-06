@@ -61,7 +61,7 @@ const WeBelieveSection = () => {
                 prefersReducedMotion
                   ? "text-foreground"
                   : activeIndex === index
-                  ? "bg-gradient-to-r from-[#8B5CF6] to-[#FF4EC4] bg-clip-text text-transparent"
+                  ? "bg-gradient-to-r from-[#9B87F5] to-[#F97BBD] bg-clip-text text-transparent"
                   : "text-[#C9C9C9]"
               }`}
             >
