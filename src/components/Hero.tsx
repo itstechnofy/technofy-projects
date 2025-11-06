@@ -20,8 +20,8 @@ const Hero = () => {
   }, []);
 
   return (
-    <section id="hero" className="min-h-[75vh] flex items-center justify-center px-4 py-8 sm:py-12 md:py-16">
-      <div className="container mx-auto text-center max-w-5xl">
+    <section id="hero" className="min-h-[75vh] flex items-center justify-center px-4 sm:px-5 py-8 sm:py-12 md:py-16">
+      <div className="container mx-auto text-center max-w-screen-sm sm:max-w-5xl">
         <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-[1.1] text-foreground">
           Building Digital{" "}
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

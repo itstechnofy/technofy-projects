@@ -1,107 +1,112 @@
-import { Play } from "lucide-react";
-import { useRef, useState } from "react";
-
-const logos = [
-  { name: "TechCorp", color: "625CC8" },
-  { name: "InnovateX", color: "F74F8C" },
-  { name: "FutureWorks", color: "625CC8" },
-  { name: "DigitalHub", color: "F74F8C" },
-  { name: "CloudBase", color: "625CC8" },
-  { name: "DataSync", color: "F74F8C" },
+const clients = [
+  {
+    name: "TechCorp Solutions",
+    description: "Enterprise software development",
+    logo: "https://via.placeholder.com/200x80/625CC8/FFFFFF?text=TechCorp",
+  },
+  {
+    name: "InnovateX Labs",
+    description: "AI-powered analytics platform",
+    logo: "https://via.placeholder.com/200x80/F74F8C/FFFFFF?text=InnovateX",
+  },
+  {
+    name: "FutureWorks Digital",
+    description: "E-commerce transformation",
+    logo: "https://via.placeholder.com/200x80/625CC8/FFFFFF?text=FutureWorks",
+  },
+  {
+    name: "DigitalHub Connect",
+    description: "Cloud infrastructure solutions",
+    logo: "https://via.placeholder.com/200x80/F74F8C/FFFFFF?text=DigitalHub",
+  },
+  {
+    name: "CloudBase Systems",
+    description: "Scalable web applications",
+    logo: "https://via.placeholder.com/200x80/625CC8/FFFFFF?text=CloudBase",
+  },
+  {
+    name: "DataSync Pro",
+    description: "Real-time data integration",
+    logo: "https://via.placeholder.com/200x80/F74F8C/FFFFFF?text=DataSync",
+  },
+  {
+    name: "NexGen Platform",
+    description: "Mobile-first solutions",
+    logo: "https://via.placeholder.com/200x80/625CC8/FFFFFF?text=NexGen",
+  },
+  {
+    name: "SmartFlow Tech",
+    description: "Workflow automation tools",
+    logo: "https://via.placeholder.com/200x80/F74F8C/FFFFFF?text=SmartFlow",
+  },
 ];
 
 const TrustedSection = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const handlePlayClick = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const handleVideoClick = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
-        setIsPlaying(true);
-      } else {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      }
-    }
-  };
-
   return (
-    <section className="py-8 sm:py-12 md:py-20 border-y border-border overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6">
-        <h2 className="text-center text-xs sm:text-sm uppercase tracking-wider text-muted-foreground mb-6 sm:mb-10 md:mb-12">
-          Trusted by Industry Leaders
+    <section className="py-16 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 text-center">
+        <h2 className="text-sm tracking-widest font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+          TRUSTED BY INDUSTRY LEADERS
         </h2>
+      </div>
 
-        <div className="relative overflow-hidden mb-12">
-          <div
-            className="flex animate-scroll w-max hover:pause"
-            onMouseEnter={(e) => (e.currentTarget.style.animationPlayState = "paused")}
-            onMouseLeave={(e) => (e.currentTarget.style.animationPlayState = "running")}
-            onFocus={(e) => (e.currentTarget.style.animationPlayState = "paused")}
-            onBlur={(e) => (e.currentTarget.style.animationPlayState = "running")}
-            role="list"
-            aria-label="Trusted brands"
-          >
-            {[...logos, ...logos].map((logo, index) => (
-              <div
-                key={index}
-                className="flex-shrink-0 mx-8 opacity-60 hover:opacity-100 transition-opacity"
-                role="listitem"
-              >
+      <div className="relative mt-10">
+        {/* Edge fade gradients */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent z-10"></div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent z-10"></div>
+
+        {/* Marquee container */}
+        <div className="flex gap-6 animate-marquee hover:[animation-play-state:paused] will-change-transform">
+          {/* First set */}
+          {clients.map((client, index) => (
+            <article
+              key={`set1-${index}`}
+              className="w-[270px] shrink-0 rounded-2xl bg-card shadow-sm border border-border p-6 text-center"
+            >
+              <div className="rounded-2xl bg-muted/50 h-36 flex items-center justify-center p-4">
                 <img
-                  src={`https://via.placeholder.com/150x60/${logo.color}/FFFFFF?text=${logo.name}`}
-                  alt={logo.name}
-                  className="h-12 w-auto"
+                  src={client.logo}
+                  className="max-h-20 w-auto object-contain"
+                  alt={client.name}
                 />
               </div>
-            ))}
-          </div>
-        </div>
+              <h3 className="mt-5 text-lg font-semibold text-foreground">
+                {client.name}
+              </h3>
+              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                {client.description}
+              </p>
+            </article>
+          ))}
 
-        <div className="max-w-4xl mx-auto">
-          <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg group">
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover cursor-pointer"
-              poster="/trusted/poster.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              onClick={handleVideoClick}
-              onError={(e) => {
-                const target = e.currentTarget;
-                target.poster = "https://images.unsplash.com/photo-1557821552-17105176677c?w=1200&h=675&fit=crop";
-              }}
-            >
-              <source src="/trusted/trailer.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            {!isPlaying && (
-              <button
-                onClick={handlePlayClick}
-                className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors"
-                aria-label="Play video"
+          {/* Duplicate set for seamless loop */}
+          <div aria-hidden="true" className="flex gap-6">
+            {clients.map((client, index) => (
+              <article
+                key={`set2-${index}`}
+                className="w-[270px] shrink-0 rounded-2xl bg-card shadow-sm border border-border p-6 text-center"
               >
-                <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <Play className="w-8 h-8 text-primary ml-1" fill="currentColor" />
+                <div className="rounded-2xl bg-muted/50 h-36 flex items-center justify-center p-4">
+                  <img
+                    src={client.logo}
+                    className="max-h-20 w-auto object-contain"
+                    alt={client.name}
+                  />
                 </div>
-              </button>
-            )}
+                <h3 className="mt-5 text-lg font-semibold text-foreground">
+                  {client.name}
+                </h3>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                  {client.description}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes scroll {
+        @keyframes marquee {
           0% {
             transform: translateX(0);
           }
@@ -110,8 +115,14 @@ const TrustedSection = () => {
           }
         }
 
-        .animate-scroll {
-          animation: scroll 30s linear infinite;
+        .animate-marquee {
+          animation: marquee 22s linear infinite;
+        }
+
+        @media (max-width: 640px) {
+          .animate-marquee {
+            animation-duration: 28s;
+          }
         }
       `}</style>
     </section>

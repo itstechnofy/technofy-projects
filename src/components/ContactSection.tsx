@@ -83,17 +83,17 @@ const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-8 sm:py-12 md:py-20 px-4 sm:px-6 bg-muted/30">
-      <div className="container mx-auto max-w-4xl">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-center">Get In Touch</h2>
-        <p className="text-center text-sm sm:text-base text-muted-foreground mb-6 sm:mb-10 md:mb-12">
+    <section id="contact" className="py-6 md:py-16 px-4 sm:px-5 bg-muted/30">
+      <div className="container mx-auto max-w-screen-sm md:max-w-4xl">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-8 text-center">Get In Touch</h2>
+        <p className="text-center text-sm sm:text-base text-muted-foreground mb-4 md:mb-8">
           Reach us via WhatsApp, Viber, Email, or Phone.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div>
-            <Label className="mb-2 sm:mb-3 block text-sm sm:text-base">Choose your preferred channel</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+            <Label className="mb-1.5 block text-sm">Choose your preferred channel</Label>
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
               {channels.map((channel) => {
                 const Icon = channel.icon;
                 return (
@@ -101,14 +101,14 @@ const ContactSection = () => {
                     key={channel.id}
                     type="button"
                     onClick={() => setSelectedChannel(channel.id)}
-                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-1.5 sm:gap-2 ${
+                    className={`h-20 rounded-xl p-4 flex items-center justify-center gap-2 transition-all ${
                       selectedChannel === channel.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
+                        ? "bg-gradient-to-r from-[#625CC8] to-[#F74F8C] text-white ring-2 ring-violet-500 border-transparent shadow-md"
+                        : "border border-neutral-200 dark:border-neutral-800 hover:border-violet-400 dark:hover:border-violet-500"
                     }`}
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-xs sm:text-sm font-medium text-center">{channel.label}</span>
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${selectedChannel === channel.id ? 'text-white' : ''}`} />
+                    <span className="text-sm font-medium text-center">{channel.label}</span>
                   </button>
                 );
               })}
@@ -164,65 +164,64 @@ const ContactSection = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <Label htmlFor="name" className="text-sm sm:text-base">Name *</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="mb-3">
+                  <Label htmlFor="name" className="mb-1.5 text-sm">Name *</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="text-sm sm:text-base"
+                    className="h-11 md:h-12 text-[15px] w-full rounded-lg"
                     required
                   />
                 </div>
                 {selectedChannel === "email" && (
-                  <div>
-                    <Label htmlFor="email" className="text-sm sm:text-base">Email *</Label>
+                  <div className="mb-3">
+                    <Label htmlFor="email" className="mb-1.5 text-sm">Email *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="text-sm sm:text-base"
+                      className="h-11 md:h-12 text-[15px] w-full rounded-lg"
                       required
                     />
                   </div>
                 )}
-                <div>
-                  <Label htmlFor="phone" className="text-sm sm:text-base">Phone</Label>
+                <div className="mb-3">
+                  <Label htmlFor="phone" className="mb-1.5 text-sm">Phone</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+63 XXX XXX XXXX"
-                    className="text-sm sm:text-base"
+                    className="h-11 md:h-12 text-[15px] w-full rounded-lg"
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="message" className="text-sm sm:text-base">Message *</Label>
+              <div className="mb-3">
+                <Label htmlFor="message" className="mb-1.5 text-sm">Message *</Label>
                 <Textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Tell us about your project..."
-                  rows={4}
-                  className="text-sm sm:text-base"
+                  className="min-h-[120px] text-[15px] rounded-lg"
                   required
                 />
               </div>
 
-              <div>
-                <Label htmlFor="source" className="text-sm sm:text-base">Where did you find us?</Label>
+              <div className="mb-3">
+                <Label htmlFor="source" className="mb-1.5 text-sm">Where did you find us?</Label>
                 <select
                   id="source"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-input rounded-md bg-background"
+                  className="w-full h-11 md:h-12 px-3 text-[15px] border border-input rounded-lg bg-background"
                 >
                   <option value="">Select one...</option>
                   <option value="Facebook">Facebook</option>
@@ -234,7 +233,10 @@ const ContactSection = () => {
                 </select>
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
+              <Button 
+                type="submit" 
+                className="h-12 w-full rounded-xl bg-gradient-to-r from-[#625CC8] to-[#F74F8C] text-white hover:opacity-90 transition-all transform active:scale-95"
+              >
                 Send via {channels.find((c) => c.id === selectedChannel)?.label}
               </Button>
             </>
