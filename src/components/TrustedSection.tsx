@@ -34,9 +34,9 @@ const TrustedSection = () => {
   };
 
   return (
-    <section className="py-16 md:py-20 border-y border-border overflow-hidden">
-      <div className="container mx-auto px-6">
-        <h2 className="text-center text-sm uppercase tracking-wider text-muted-foreground mb-12">
+    <section className="py-8 sm:py-12 md:py-20 border-y border-border overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6">
+        <h2 className="text-center text-xs sm:text-sm uppercase tracking-wider text-muted-foreground mb-6 sm:mb-10 md:mb-12">
           Trusted by Industry Leaders
         </h2>
 

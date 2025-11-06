@@ -1,59 +1,28 @@
 import { useInView } from "react-intersection-observer";
 
 const WeBelieveSection = () => {
-  const { ref: line1Ref, inView: line1InView } = useInView({
-    triggerOnce: true,
+  const { ref, inView } = useInView({
     threshold: 0.2,
-  });
-  const { ref: line2Ref, inView: line2InView } = useInView({
     triggerOnce: true,
-    threshold: 0.2,
-  });
-  const { ref: line3Ref, inView: line3InView } = useInView({
-    triggerOnce: true,
-    threshold: 0.2,
   });
 
   return (
-    <section id="we-believe" className="py-16 md:py-20 px-6">
-      <div className="container mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-8">
-          We believe that great digital experiences
-        </h2>
-        
-        <div className="space-y-4 text-xl md:text-2xl leading-relaxed">
-          <p
-            ref={line1Ref}
-            className={`transition-all duration-700 ${
-              line1InView
-                ? "text-foreground translate-y-0 opacity-100"
-                : "text-neutral-400 dark:text-neutral-600 translate-y-4 opacity-60"
-            }`}
-            style={{ transitionDelay: "0ms" }}
-          >
+    <section id="we-believe" className="py-8 sm:py-12 md:py-20 px-4 sm:px-6 bg-muted/30">
+      <div className="container mx-auto max-w-4xl text-center" ref={ref}>
+        <div 
+          className={`transition-all duration-1000 ${
+            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-relaxed text-foreground">
+            <span className="font-semibold">We believe that great digital experiences</span>
+            <br />
+            <br />
             are built on a foundation of innovation,
-          </p>
-          <p
-            ref={line2Ref}
-            className={`transition-all duration-700 ${
-              line2InView
-                ? "text-foreground translate-y-0 opacity-100"
-                : "text-neutral-400 dark:text-neutral-600 translate-y-4 opacity-60"
-            }`}
-            style={{ transitionDelay: "200ms" }}
-          >
+            <br />
             collaboration, and unwavering commitment
-          </p>
-          <p
-            ref={line3Ref}
-            className={`transition-all duration-700 ${
-              line3InView
-                ? "text-foreground translate-y-0 opacity-100"
-                : "text-neutral-400 dark:text-neutral-600 translate-y-4 opacity-60"
-            }`}
-            style={{ transitionDelay: "400ms" }}
-          >
-            to excellence in every project we undertake.
+            <br />
+            to excellence in every pixel and line of code.
           </p>
         </div>
       </div>
