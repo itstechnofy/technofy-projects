@@ -5,7 +5,7 @@ const WeBelieveSection = () => {
         <div className="space-y-2 text-left">
           <p className="text-xl md:text-2xl font-medium leading-relaxed text-[#C5C5C5]">
             We believe that great digital{" "}
-            <span className="bg-gradient-to-r from-[#B7A4D6] to-[#CC96B0] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#9B87F5] to-[#F97BBD] bg-clip-text text-transparent">
               experiences
             </span>
           </p>
@@ -15,7 +15,7 @@ const WeBelieveSection = () => {
           <p className="text-xl md:text-2xl font-medium leading-relaxed text-[#C5C5C5]">
             collaboration, and unwavering commitment
           </p>
-          <p className="text-xl md:text-2xl font-medium leading-relaxed bg-gradient-to-r from-[#B7A4D6] to-[#CC96B0] bg-clip-text text-transparent">
+          <p className="text-xl md:text-2xl font-medium leading-relaxed bg-gradient-to-r from-[#9B87F5] to-[#F97BBD] bg-clip-text text-transparent">
             to excellence in every pixel and line of code.
           </p>
         </div>
