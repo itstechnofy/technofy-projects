@@ -15,14 +15,14 @@ const WeBelieveSection = () => {
       const sectionTop = rect.top;
       const sectionHeight = rect.height;
       
-      // Slower, more gradual highlighting - increased multiplier for slower progression
+      // Slower, more gradual highlighting with better distribution
       if (sectionTop < windowHeight && sectionTop + sectionHeight > 0) {
-        // Much slower progress calculation (0 to 1)
-        const progress = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (windowHeight * 1.8)));
+        // Calculate progress - adjusted for better distribution across all lines
+        const progress = Math.max(0, Math.min(1, (windowHeight - sectionTop + sectionHeight * 0.3) / (windowHeight * 1.4)));
         
         // Map progress to number of highlighted lines (0 to 5)
-        const lines = Math.floor(progress * 6);
-        setHighlightedLines(lines);
+        const lines = Math.floor(progress * 5.2); // Slightly over 5 to ensure line 5 is reached
+        setHighlightedLines(Math.min(lines, 5)); // Cap at 5
       } else if (sectionTop >= windowHeight) {
         setHighlightedLines(0);
       }
