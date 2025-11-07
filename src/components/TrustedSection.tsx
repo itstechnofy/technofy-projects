@@ -68,17 +68,18 @@ const TrustedSection = () => {
                   className="shrink-0 text-center"
                 >
                   {/* White square - image only */}
-                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto">
+                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto border-0 ring-0 outline-none">
                     <img
                       src={client.logo}
-                      alt={client.name}
+                      alt=""
+                      aria-hidden="true"
                       className="block w-full h-full object-cover border-0 ring-0 outline-none"
                     />
                   </div>
                   {/* Text below square */}
-                  <h3 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
+                  <h4 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
                     {client.name}
-                  </h3>
+                  </h4>
                   <p className="text-sm text-[#6F6F6F] dark:text-[#A9A9A9] leading-5">
                     {client.description}
                   </p>
@@ -93,16 +94,17 @@ const TrustedSection = () => {
                   key={`set2-${index}`}
                   className="shrink-0 text-center"
                 >
-                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto">
+                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto border-0 ring-0 outline-none">
                     <img
                       src={client.logo}
-                      alt={client.name}
+                      alt=""
+                      aria-hidden="true"
                       className="block w-full h-full object-cover border-0 ring-0 outline-none"
                     />
                   </div>
-                  <h3 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
+                  <h4 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
                     {client.name}
-                  </h3>
+                  </h4>
                   <p className="text-sm text-[#6F6F6F] dark:text-[#A9A9A9] leading-5">
                     {client.description}
                   </p>
