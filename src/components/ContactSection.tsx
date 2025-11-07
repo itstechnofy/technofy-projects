@@ -51,7 +51,7 @@ const ContactSection = () => {
     const lastSubmitTime = localStorage.getItem("lastContactSubmit");
     if (lastSubmitTime) {
       const timeSinceLastSubmit = Date.now() - parseInt(lastSubmitTime);
-      if (timeSinceLastSubmit < 30000) { // 30 seconds
+      if (timeSinceLastSubmit < 3000) { // 3 seconds
         toast({
           title: "Please wait",
           description: "You're submitting too quickly. Please wait a moment.",
