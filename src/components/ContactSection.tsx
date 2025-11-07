@@ -19,8 +19,8 @@ type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 
 const countryCodes = [
   { code: "+63", country: "Philippines", flag: "🇵🇭" },
-  { code: "+1", country: "USA", flag: "🇺🇸" },
-  { code: "+1", country: "Canada", flag: "🇨🇦" },
+  { code: "+1-US", country: "USA", flag: "🇺🇸", dialCode: "+1" },
+  { code: "+1-CA", country: "Canada", flag: "🇨🇦", dialCode: "+1" },
   { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
   { code: "+61", country: "Australia", flag: "🇦🇺" },
   { code: "+852", country: "Hong Kong", flag: "🇭🇰" },
@@ -108,8 +108,12 @@ const ContactSection = () => {
     }
 
     try {
+      // Get the actual dial code (handle USA/Canada special case)
+      const selectedCountry = countryCodes.find(c => c.code === countryCode);
+      const actualDialCode = selectedCountry?.dialCode || countryCode;
+      
       // Combine country code and phone number
-      const fullPhone = phone.trim() ? `${countryCode}${phone.trim()}` : undefined;
+      const fullPhone = phone.trim() ? `${actualDialCode}${phone.trim()}` : undefined;
       
       // Validate with zod schema
       const validatedData = contactSchema.parse({
@@ -151,7 +155,9 @@ const ContactSection = () => {
       return;
     }
 
-    const fullPhone = phone.trim() ? `${countryCode}${phone.trim()}` : "";
+    const selectedCountry = countryCodes.find(c => c.code === countryCode);
+    const actualDialCode = selectedCountry?.dialCode || countryCode;
+    const fullPhone = phone.trim() ? `${actualDialCode}${phone.trim()}` : "";
     const encodedMessage = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${fullPhone}\n\n${message}\n\nFound us via: ${source}`
     );
@@ -291,19 +297,26 @@ const ContactSection = () => {
                     <Select value={countryCode} onValueChange={setCountryCode}>
                       <SelectTrigger className="h-11 md:h-12 w-[180px] rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0">
                         <SelectValue>
-                          {countryCodes.find(c => c.code === countryCode)?.flag} {countryCode}
+                          {(() => {
+                            const selected = countryCodes.find(c => c.code === countryCode);
+                            const displayCode = selected?.dialCode || selected?.code || countryCode;
+                            return `${selected?.flag} ${displayCode}`;
+                          })()}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] overflow-y-auto">
-                        {countryCodes.map((country, index) => (
-                          <SelectItem key={`${country.code}-${index}`} value={country.code}>
-                            <span className="flex items-center gap-2">
-                              <span>{country.flag}</span>
-                              <span>{country.country}</span>
-                              <span className="text-muted-foreground">{country.code}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
+                        {countryCodes.map((country) => {
+                          const displayCode = country.dialCode || country.code;
+                          return (
+                            <SelectItem key={country.code} value={country.code}>
+                              <span className="flex items-center gap-2">
+                                <span>{country.flag}</span>
+                                <span>{country.country}</span>
+                                <span className="text-muted-foreground">{displayCode}</span>
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <Input
