@@ -181,7 +181,7 @@ const ContactSection = () => {
         url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
-        url = `https://m.me/technofyph`;
+        url = `https://m.me/technofy.ph`;
         break;
     }
 
