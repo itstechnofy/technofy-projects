@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { MessageCircle, Send, Phone as PhoneIcon, Mail, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { leadsService } from "@/lib/dataService";
+import { leadsService, contactSchema } from "@/lib/dataService";
+import { z } from "zod";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 
@@ -17,6 +18,7 @@ const ContactSection = () => {
   const [message, setMessage] = useState("");
   const [source, setSource] = useState("");
   const [copied, setCopied] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
   const { toast } = useToast();
 
   const channels = [
@@ -40,35 +42,64 @@ const ContactSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || (selectedChannel === "email" && !email) || (selectedChannel === "phone" && !phone)) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+    // Honeypot check - if filled, it's a bot
+    if (honeypot) {
       return;
     }
 
-    if (selectedChannel !== "phone" && !message) {
-      toast({
-        title: "Missing message",
-        description: "Please enter a message",
-        variant: "destructive",
-      });
-      return;
+    // Basic rate limiting - client side
+    const lastSubmitTime = localStorage.getItem("lastContactSubmit");
+    if (lastSubmitTime) {
+      const timeSinceLastSubmit = Date.now() - parseInt(lastSubmitTime);
+      if (timeSinceLastSubmit < 30000) { // 30 seconds
+        toast({
+          title: "Please wait",
+          description: "You're submitting too quickly. Please wait a moment.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
-    // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
-    if (selectedChannel !== "phone") {
-      const leadData = {
-        name,
-        phone,
-        message,
-        where_did_you_find_us: source,
+    try {
+      // Validate with zod schema
+      const validatedData = contactSchema.parse({
+        name: name.trim(),
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        message: message.trim(),
+        where_did_you_find_us: source || undefined,
         contact_method: selectedChannel,
-      };
+      });
 
-      await leadsService.createLead(leadData);
+      // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
+      if (selectedChannel !== "phone") {
+        await leadsService.createLead({
+          name: validatedData.name,
+          phone: validatedData.phone,
+          message: validatedData.message,
+          where_did_you_find_us: validatedData.where_did_you_find_us,
+          contact_method: validatedData.contact_method as "whatsapp" | "viber" | "messenger" | "email",
+        });
+
+        // Set rate limit timestamp
+        localStorage.setItem("lastContactSubmit", Date.now().toString());
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to submit your message. Please try again.",
+        variant: "destructive",
+      });
+      return;
     }
 
     const encodedMessage = encodeURIComponent(
@@ -245,6 +276,20 @@ const ContactSection = () => {
                   <option value="Repeat Client">Repeat Client</option>
                   <option value="Others">Others</option>
                 </select>
+              </div>
+
+              {/* Honeypot field - hidden from users, only bots will fill it */}
+              <div className="absolute left-[-9999px]" aria-hidden="true">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  name="website"
+                  type="text"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
               </div>
 
               <Button 
