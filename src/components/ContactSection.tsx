@@ -2,6 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MessageCircle, Send, Phone as PhoneIcon, Mail, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -10,10 +17,24 @@ import { z } from "zod";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 
+const countryCodes = [
+  { code: "+63", country: "Philippines", flag: "🇵🇭" },
+  { code: "+1", country: "USA/Canada", flag: "🇺🇸" },
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬" },
+  { code: "+86", country: "China", flag: "🇨🇳" },
+  { code: "+81", country: "Japan", flag: "🇯🇵" },
+  { code: "+82", country: "South Korea", flag: "🇰🇷" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+];
+
 const ContactSection = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel>("whatsapp");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+63");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [source, setSource] = useState("");
@@ -62,11 +83,14 @@ const ContactSection = () => {
     }
 
     try {
+      // Combine country code and phone number
+      const fullPhone = phone.trim() ? `${countryCode}${phone.trim()}` : undefined;
+      
       // Validate with zod schema
       const validatedData = contactSchema.parse({
         name: name.trim(),
         email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
+        phone: fullPhone,
         message: message.trim(),
         where_did_you_find_us: source || undefined,
         contact_method: selectedChannel,
@@ -102,8 +126,9 @@ const ContactSection = () => {
       return;
     }
 
+    const fullPhone = phone.trim() ? `${countryCode}${phone.trim()}` : "";
     const encodedMessage = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}\n\nFound us via: ${source}`
+      `Name: ${name}\nEmail: ${email}\nPhone: ${fullPhone}\n\n${message}\n\nFound us via: ${source}`
     );
 
     let url = "";
@@ -237,14 +262,31 @@ const ContactSection = () => {
                 )}
                 <div className="mb-3">
                   <Label htmlFor="phone" className="mb-1.5 text-sm">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+63 XXX XXX XXXX"
-                    className="h-11 md:h-12 text-[15px] w-full rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0"
-                  />
+                  <div className="flex gap-2">
+                    <Select value={countryCode} onValueChange={setCountryCode}>
+                      <SelectTrigger className="h-11 md:h-12 w-[140px] rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countryCodes.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{country.flag}</span>
+                              <span>{country.code}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="XXX XXX XXXX"
+                      className="h-11 md:h-12 text-[15px] flex-1 rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0"
+                    />
+                  </div>
                 </div>
               </div>
 
