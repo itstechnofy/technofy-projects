@@ -65,10 +65,10 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set1-${index}`}
-                  className="shrink-0 w-[240px] sm:w-[280px] lg:w-[320px] text-center"
+                  className="shrink-0 text-center"
                 >
                   {/* White square - image only */}
-                  <div className="bg-white rounded-[24px] ring-1 ring-black/5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 aspect-square flex items-center justify-center">
+                  <div className="bg-white rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto p-6">
                     <img
                       src={client.logo}
                       alt={client.name}
@@ -76,10 +76,10 @@ const TrustedSection = () => {
                     />
                   </div>
                   {/* Text below square */}
-                  <h3 className="mt-4 text-lg font-medium text-[#1F1F1F]">
+                  <h3 className="mt-3 text-base font-medium text-[#1F1F1F]">
                     {client.name}
                   </h3>
-                  <p className="text-base text-[#2C2C2C]">
+                  <p className="text-sm text-[#8A8A8A] leading-5">
                     {client.description}
                   </p>
                 </article>
@@ -91,19 +91,19 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set2-${index}`}
-                  className="shrink-0 w-[240px] sm:w-[280px] lg:w-[320px] text-center"
+                  className="shrink-0 text-center"
                 >
-                  <div className="bg-white rounded-[24px] ring-1 ring-black/5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 aspect-square flex items-center justify-center">
+                  <div className="bg-white rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto p-6">
                     <img
                       src={client.logo}
                       alt={client.name}
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <h3 className="mt-4 text-lg font-medium text-[#1F1F1F]">
+                  <h3 className="mt-3 text-base font-medium text-[#1F1F1F]">
                     {client.name}
                   </h3>
-                  <p className="text-base text-[#2C2C2C]">
+                  <p className="text-sm text-[#8A8A8A] leading-5">
                     {client.description}
                   </p>
                 </article>
