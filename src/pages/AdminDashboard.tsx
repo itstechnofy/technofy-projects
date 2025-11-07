@@ -57,27 +57,30 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-black">Admin Dashboard</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-600">Technofy</span>
-            <NotificationBell />
-            <Button 
-              onClick={() => navigate("/admin/settings")} 
-              variant="outline"
-              size="icon"
-              className="border-gray-200 hover:bg-gray-100"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline"
-              className="border-black text-black hover:bg-black hover:text-white"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
+          <div className="flex justify-between items-center gap-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-black flex-shrink-0">Admin Dashboard</h1>
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <span className="hidden sm:inline text-sm font-medium text-gray-600">Technofy</span>
+              <NotificationBell />
+              <Button 
+                onClick={() => navigate("/admin/settings")} 
+                variant="outline"
+                size="icon"
+                className="border-gray-200 hover:bg-gray-100 flex-shrink-0"
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+              <Button 
+                onClick={handleLogout} 
+                variant="outline"
+                size="sm"
+                className="border-black text-black hover:bg-black hover:text-white flex-shrink-0"
+              >
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>

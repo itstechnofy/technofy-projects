@@ -35,10 +35,27 @@ const AdminSettings = () => {
   };
 
   const handleTestSound = () => {
-    const sound = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGS56+ahUBELTKXh8bllHAU2jdXxy3YpBSh+zPDajzsKElyx6OyrWBQLSKDf8sFuIgUug8/y2Ik2CBZiuOvmolATDEuk4PGzYBsFN4zU8ct6KgYngMvw3IA7ChFZr+frq1cVCkif3vK+bSIFL4PP8tyJNQcZYLbo5qJPEgxIo+DxsmAfBTeM1PHKDC");
-    sound.volume = 0.25;
-    sound.play();
-    toast.success("Playing test sound");
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      
+      gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.25);
+      
+      toast.success("Playing test sound");
+    } catch (e) {
+      toast.error("Failed to play sound");
+    }
   };
 
   const handleDesktopPushToggle = async (enabled: boolean) => {
