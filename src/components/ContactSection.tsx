@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { MessageCircle, Send, Phone as PhoneIcon, Mail, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { leadsService } from "@/lib/dataService";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 
@@ -36,7 +37,7 @@ const ContactSection = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || (selectedChannel === "email" && !email) || (selectedChannel === "phone" && !phone)) {
@@ -57,6 +58,19 @@ const ContactSection = () => {
       return;
     }
 
+    // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
+    if (selectedChannel !== "phone") {
+      const leadData = {
+        name,
+        phone,
+        message,
+        where_did_you_find_us: source,
+        contact_method: selectedChannel,
+      };
+
+      await leadsService.createLead(leadData);
+    }
+
     const encodedMessage = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}\n\nFound us via: ${source}`
     );
@@ -70,7 +84,7 @@ const ContactSection = () => {
         url = `viber://chat?number=%2B639458751971`;
         break;
       case "email":
-        url = `mailto:hello@technofy.com?subject=Inquiry&body=${encodedMessage}`;
+        url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
         url = `https://m.me/yourpageusername`;
