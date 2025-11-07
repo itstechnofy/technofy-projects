@@ -25,44 +25,53 @@ export interface NotificationSettings {
   timezone: string;
 }
 
-// Create a simple beep sound using Web Audio API
+// Create a simple notification beep using Web Audio API
 let audioContext: AudioContext | null = null;
-let isAudioInitialized = false;
 
-const initializeAudio = () => {
-  if (!isAudioInitialized && typeof window !== 'undefined') {
+const getAudioContext = () => {
+  if (!audioContext && typeof window !== 'undefined') {
     try {
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      isAudioInitialized = true;
     } catch (e) {
-      console.error('Failed to initialize audio context:', e);
+      console.error('Failed to create audio context:', e);
     }
   }
+  return audioContext;
 };
 
-const playNotificationBeep = () => {
-  initializeAudio();
-  
-  if (!audioContext) return;
-  
+const playNotificationBeep = async () => {
   try {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const context = getAudioContext();
+    if (!context) {
+      console.log('Audio context not available');
+      return;
+    }
+
+    // Resume context if suspended (required for autoplay policy)
+    if (context.state === 'suspended') {
+      await context.resume();
+    }
+
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    gainNode.connect(context.destination);
     
-    // Configure the beep sound
+    // Pleasant notification beep (two tones)
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800 Hz
+    oscillator.frequency.setValueAtTime(800, context.currentTime);
+    oscillator.frequency.setValueAtTime(1000, context.currentTime + 0.1);
     
-    // Set volume
-    gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+    // Volume envelope
+    gainNode.gain.setValueAtTime(0, context.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, context.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.25);
     
-    // Play the sound
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.25);
+    oscillator.start(context.currentTime);
+    oscillator.stop(context.currentTime + 0.25);
+    
+    console.log('Notification sound played');
   } catch (e) {
     console.error('Failed to play notification sound:', e);
   }
@@ -105,9 +114,12 @@ export const useNotifications = () => {
   };
 
   // Play notification sound
-  const playSound = () => {
-    if (settings.sound_enabled && !isInDNDMode() && document.hasFocus()) {
-      playNotificationBeep();
+  const playSound = async () => {
+    if (settings.sound_enabled && !isInDNDMode()) {
+      console.log('Attempting to play notification sound...');
+      await playNotificationBeep();
+    } else {
+      console.log('Sound disabled or in DND mode');
     }
   };
 

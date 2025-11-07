@@ -34,9 +34,15 @@ const AdminSettings = () => {
     toast.success("Test notification sent!");
   };
 
-  const handleTestSound = () => {
+  const handleTestSound = async () => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Resume if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -45,16 +51,19 @@ const AdminSettings = () => {
       
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
       
-      gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.25);
       
-      toast.success("Playing test sound");
+      toast.success("Test sound played!");
     } catch (e) {
-      toast.error("Failed to play sound");
+      console.error('Test sound error:', e);
+      toast.error("Failed to play sound: " + (e as Error).message);
     }
   };
 
