@@ -59,7 +59,7 @@ const TrustedSection = () => {
           }}
         >
           {/* Marquee track */}
-          <div className="flex gap-8 animate-marquee will-change-transform">
+          <div className="flex gap-8 animate-marquee will-change-transform [transform:translateZ(0)] [backface-visibility:hidden]">
             {/* First set */}
             <div className="flex gap-8">
               {clients.map((client, index) => (
@@ -68,9 +68,9 @@ const TrustedSection = () => {
                   className="shrink-0 text-center"
                 >
                   {/* Shadow wrapper */}
-                  <div className="mx-auto filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_12px_32px_rgba(0,0,0,0.55)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                  <div className="mx-auto filter drop-shadow-[0_6px_16px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_10px_24px_rgba(0,0,0,0.40)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] will-change-[filter]">
                     {/* White square - image only */}
-                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none">
+                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none [background-clip:padding-box]">
                       <img
                         src={client.logo}
                         alt=""
@@ -98,9 +98,9 @@ const TrustedSection = () => {
                   className="shrink-0 text-center"
                 >
                   {/* Shadow wrapper */}
-                  <div className="mx-auto filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_12px_32px_rgba(0,0,0,0.55)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                  <div className="mx-auto filter drop-shadow-[0_6px_16px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_10px_24px_rgba(0,0,0,0.40)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] will-change-[filter]">
                     {/* White square - image only */}
-                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none">
+                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none [background-clip:padding-box]">
                       <img
                         src={client.logo}
                         alt=""
