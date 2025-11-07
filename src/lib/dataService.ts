@@ -43,6 +43,10 @@ export type Lead = {
   status: "New" | "Follow Up" | "Closed";
   notes: string | null;
   created_at: string;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  geo_source: string | null;
 };
 
 export type LeadInsert = {
