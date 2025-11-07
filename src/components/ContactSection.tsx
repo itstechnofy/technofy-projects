@@ -371,7 +371,7 @@ const ContactSection = () => {
               </div>
 
               {/* Honeypot field - hidden from users, only bots will fill it */}
-              <div className="absolute left-[-9999px]" aria-hidden="true">
+              <div className="hidden" aria-hidden="true">
                 <Label htmlFor="website">Website</Label>
                 <Input
                   id="website"
