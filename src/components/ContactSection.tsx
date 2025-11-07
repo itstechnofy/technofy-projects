@@ -172,16 +172,19 @@ const ContactSection = () => {
     let url = "";
     switch (selectedChannel) {
       case "whatsapp":
-        url = `https://api.whatsapp.com/send?phone=+639458751971&text=${encodedMessage}`;
+        // Use wa.me format which works on both mobile and web
+        url = `https://wa.me/639458751971?text=${encodedMessage}`;
         break;
       case "viber":
-        url = `viber://chat?number=%2B639458751971`;
+        // Viber deep link with message text
+        url = `viber://chat?number=639458751971&text=${encodedMessage}`;
         break;
       case "email":
         url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
-        url = `https://m.me/100064057205047`;
+        // Use page username format
+        url = `https://m.me/technofy.ph?text=${encodedMessage}`;
         break;
     }
 
