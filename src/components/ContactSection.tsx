@@ -304,7 +304,7 @@ const ContactSection = () => {
                   <Label htmlFor="phone" className="mb-1.5 text-sm">Phone</Label>
                   <div className="flex gap-2">
                     <Select value={countryCode} onValueChange={setCountryCode}>
-                      <SelectTrigger className="h-11 md:h-12 w-[140px] rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0">
+                      <SelectTrigger className="h-11 md:h-12 w-[110px] rounded-lg border-[#D6D6D6] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0">
                         <SelectValue>
                           {(() => {
                             const selected = countryCodes.find(c => c.code === countryCode);
