@@ -70,12 +70,28 @@ const TrustedSection = () => {
                   {/* Shadow wrapper */}
                   <div className="mx-auto filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
                     {/* White square - image only */}
-                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center [border:none] [outline:none] [box-shadow:none]">
+                    <div 
+                      className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"
+                      style={{
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        WebkitBoxShadow: 'none',
+                        MozBoxShadow: 'none'
+                      }}
+                    >
                       <img
                         src={client.logo}
                         alt=""
                         aria-hidden="true"
-                        className="block w-full h-full object-cover [border:none] [outline:none]"
+                        className="block w-full h-full object-cover"
+                        style={{
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none',
+                          WebkitBoxShadow: 'none',
+                          MozBoxShadow: 'none'
+                        }}
                       />
                     </div>
                   </div>
@@ -100,12 +116,28 @@ const TrustedSection = () => {
                   {/* Shadow wrapper */}
                   <div className="mx-auto filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
                     {/* White square - image only */}
-                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center [border:none] [outline:none] [box-shadow:none]">
+                    <div 
+                      className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"
+                      style={{
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        WebkitBoxShadow: 'none',
+                        MozBoxShadow: 'none'
+                      }}
+                    >
                       <img
                         src={client.logo}
                         alt=""
                         aria-hidden="true"
-                        className="block w-full h-full object-cover [border:none] [outline:none]"
+                        className="block w-full h-full object-cover"
+                        style={{
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none',
+                          WebkitBoxShadow: 'none',
+                          MozBoxShadow: 'none'
+                        }}
                       />
                     </div>
                   </div>
