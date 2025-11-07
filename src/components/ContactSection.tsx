@@ -121,7 +121,7 @@ const ContactSection = () => {
       // Validate with zod schema
       const validatedData = contactSchema.parse({
         name: name.trim(),
-        email: email.trim() || undefined,
+        email: email && email.trim() ? email.trim() : undefined,
         phone: fullPhone,
         message: message.trim(),
         where_did_you_find_us: source || undefined,
@@ -181,7 +181,7 @@ const ContactSection = () => {
         url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
-        url = `https://m.me/technofy.ph`;
+        url = `https://m.me/100064057205047`;
         break;
     }
 
@@ -302,7 +302,7 @@ const ContactSection = () => {
                   <Label htmlFor="phone" className="mb-1.5 text-sm">Phone</Label>
                   <div className="flex gap-2">
                     <Select value={countryCode} onValueChange={setCountryCode}>
-                      <SelectTrigger className="h-11 md:h-12 w-[180px] rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0">
+                      <SelectTrigger className="h-11 md:h-12 w-[140px] rounded-lg border-[#D6D6D6] focus:border-[#F05192] focus-visible:ring-0">
                         <SelectValue>
                           {(() => {
                             const selected = countryCodes.find(c => c.code === countryCode);
