@@ -172,24 +172,39 @@ const ContactSection = () => {
     let url = "";
     switch (selectedChannel) {
       case "whatsapp":
-        // Use wa.me format which works on both mobile and web
+        // Use wa.me format - works on both mobile and web
         url = `https://wa.me/639458751971?text=${encodedMessage}`;
         break;
       case "viber":
-        // Viber deep link with message text
-        url = `viber://chat?number=639458751971&text=${encodedMessage}`;
+        // Viber only works if app is installed, fallback shows number
+        url = `viber://contact?number=%2B639458751971`;
+        toast({
+          title: "Opening Viber",
+          description: "If Viber doesn't open, please search for +639458751971 in your Viber app",
+        });
         break;
       case "email":
         url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
-        // Use page username format
-        url = `https://m.me/technofy.ph?text=${encodedMessage}`;
+        // Messenger with page username (without pre-filled text as it's not supported)
+        url = `https://m.me/technofy.ph`;
+        toast({
+          title: "Opening Messenger",
+          description: "Please send your message in the chat that opens",
+        });
         break;
     }
 
     if (url) {
+      console.log("Opening URL:", url);
       window.open(url, "_blank");
+      
+      // Show success message
+      toast({
+        title: "Redirecting...",
+        description: `Opening ${channels.find((c) => c.id === selectedChannel)?.label}`,
+      });
     }
   };
 
