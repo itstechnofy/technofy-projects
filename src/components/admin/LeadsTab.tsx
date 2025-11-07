@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, type Lead } from "@/lib/dataService";
-import { Search, Download, Mail, MessageCircle, Send, ExternalLink } from "lucide-react";
+import { Search, Download, Mail, MessageCircle, Send, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { notifyLeadStatusChanged, notifyLeadNoteAdded, notifyLeadsExportComplete } from "@/lib/notificationService";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -19,12 +20,22 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const LeadsTab = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]); // For stats and sources
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
@@ -32,50 +43,78 @@ const LeadsTab = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"New" | "Follow Up" | "Closed">("New");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadLeads();
-  }, []);
+    loadAllLeads(); // For stats and sources
+  }, [page, pageSize]);
 
   useEffect(() => {
-    filterLeads();
-  }, [leads, searchQuery, statusFilter, sourceFilter]);
+    // Reset to page 1 when filters change
+    setPage(1);
+  }, [searchQuery, statusFilter, sourceFilter]);
+
+  useEffect(() => {
+    // Load data when page resets or filters change
+    loadLeads();
+    loadAllLeads();
+  }, [page, searchQuery, statusFilter, sourceFilter]);
 
   const loadLeads = async () => {
-    const { data, error } = await leadsService.getAllLeads();
+    let query = supabase
+      .from("leads")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    // Apply filters
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+    }
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    if (sourceFilter !== "all") {
+      query = query.eq("where_did_you_find_us", sourceFilter);
+    }
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
+
     if (error) {
       toast({
         title: "Error",
         description: "Failed to load leads",
         variant: "destructive",
       });
-    } else if (data) {
-      setLeads(data);
+    } else {
+      setLeads(data as Lead[] || []);
+      setTotalCount(count || 0);
     }
   };
 
-  const filterLeads = () => {
-    let filtered = leads;
+  const loadAllLeads = async () => {
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (lead) =>
-          lead.name.toLowerCase().includes(query) ||
-          (lead.phone && lead.phone.toLowerCase().includes(query))
-      );
+    if (!error && data) {
+      setAllLeads(data as Lead[]);
     }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((lead) => lead.status === statusFilter);
-    }
-
-    if (sourceFilter !== "all") {
-      filtered = filtered.filter((lead) => lead.where_did_you_find_us === sourceFilter);
-    }
-
-    setFilteredLeads(filtered);
   };
 
   const openLeadDetails = (lead: Lead) => {
@@ -146,8 +185,30 @@ const LeadsTab = () => {
     }
   };
 
-  const exportToCSV = () => {
-    if (filteredLeads.length === 0) {
+  const exportToCSV = async () => {
+    // Fetch ALL filtered results, not just current page
+    let query = supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    // Apply same filters
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+    }
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    if (sourceFilter !== "all") {
+      query = query.eq("where_did_you_find_us", sourceFilter);
+    }
+
+    const { data: allFilteredLeads, error } = await query;
+
+    if (error || !allFilteredLeads || allFilteredLeads.length === 0) {
       toast({
         title: "No data",
         description: "No leads to export",
@@ -170,7 +231,7 @@ const LeadsTab = () => {
       "Created At (PH Time)",
     ];
 
-    const rows = filteredLeads.map((lead) => {
+    const rows = allFilteredLeads.map((lead) => {
       const phDate = new Date(lead.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
       return [
         lead.id,
@@ -204,8 +265,49 @@ const LeadsTab = () => {
 
     toast({
       title: "Export successful",
-      description: `Downloaded ${filteredLeads.length} leads`,
+      description: `Downloaded ${allFilteredLeads.length} leads`,
     });
+  };
+
+  const handleDeleteClick = (lead: Lead, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the detail sheet
+    setLeadToDelete(lead);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!leadToDelete) return;
+
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from("leads")
+      .delete()
+      .eq("id", leadToDelete.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete lead",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Lead deleted",
+        description: "Lead has been permanently deleted",
+      });
+
+      // If we deleted the last item on the current page, go back one page
+      if (leads.length === 1 && page > 1) {
+        setPage(page - 1);
+      } else {
+        await loadLeads();
+        await loadAllLeads();
+      }
+    }
+
+    setIsDeleting(false);
+    setDeleteDialogOpen(false);
+    setLeadToDelete(null);
   };
 
   const getStats = () => {
@@ -214,12 +316,12 @@ const LeadsTab = () => {
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
 
-    const todayCount = leads.filter((l) => new Date(l.created_at) >= today).length;
-    const weekCount = leads.filter((l) => new Date(l.created_at) >= weekAgo).length;
-    const monthCount = leads.filter((l) => new Date(l.created_at) >= monthAgo).length;
+    const todayCount = allLeads.filter((l) => new Date(l.created_at) >= today).length;
+    const weekCount = allLeads.filter((l) => new Date(l.created_at) >= weekAgo).length;
+    const monthCount = allLeads.filter((l) => new Date(l.created_at) >= monthAgo).length;
 
     const sources: Record<string, number> = {};
-    leads.forEach((lead) => {
+    allLeads.forEach((lead) => {
       if (lead.where_did_you_find_us) {
         sources[lead.where_did_you_find_us] = (sources[lead.where_did_you_find_us] || 0) + 1;
       }
@@ -233,7 +335,8 @@ const LeadsTab = () => {
   };
 
   const stats = getStats();
-  const uniqueSources = Array.from(new Set(leads.map((l) => l.where_did_you_find_us).filter(Boolean)));
+  const uniqueSources = Array.from(new Set(allLeads.map((l) => l.where_did_you_find_us).filter(Boolean)));
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-PH", { 
@@ -337,10 +440,11 @@ const LeadsTab = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-black">Method</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-black">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-black">Created</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-black">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLeads.map((lead) => (
+              {leads.map((lead) => (
                 <tr
                   key={lead.id}
                   onClick={() => openLeadDetails(lead)}
@@ -367,16 +471,71 @@ const LeadsTab = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{formatDate(lead.created_at)}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDeleteClick(lead, e)}
+                      disabled={isDeleting}
+                      className="hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {filteredLeads.length === 0 && (
+          {leads.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               No leads found
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 0 && (
+          <div className="border-t border-gray-200 px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Page {page} of {totalPages} ({totalCount} total)
+              </span>
+              <Select value={pageSize.toString()} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="w-[120px] border-gray-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="20">20 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                  <SelectItem value="100">100 per page</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="border-gray-300"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="border-gray-300"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lead Detail Sheet */}
@@ -490,6 +649,28 @@ const LeadsTab = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the lead from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
