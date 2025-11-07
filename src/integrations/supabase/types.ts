@@ -16,35 +16,47 @@ export type Database = {
     Tables: {
       leads: {
         Row: {
+          city: string | null
           contact_method: string
+          country: string | null
           created_at: string | null
+          geo_source: string | null
           id: string
           message: string
           name: string
           notes: string | null
           phone: string | null
+          region: string | null
           status: string | null
           where_did_you_find_us: string | null
         }
         Insert: {
+          city?: string | null
           contact_method: string
+          country?: string | null
           created_at?: string | null
+          geo_source?: string | null
           id?: string
           message: string
           name: string
           notes?: string | null
           phone?: string | null
+          region?: string | null
           status?: string | null
           where_did_you_find_us?: string | null
         }
         Update: {
+          city?: string | null
           contact_method?: string
+          country?: string | null
           created_at?: string | null
+          geo_source?: string | null
           id?: string
           message?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          region?: string | null
           status?: string | null
           where_did_you_find_us?: string | null
         }
@@ -68,6 +80,60 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visits: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          device: string | null
+          geo_source: string | null
+          id: string
+          ip_hash: string | null
+          occurred_at: string
+          path: string | null
+          referrer: string | null
+          region: string | null
+          session_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device?: string | null
+          geo_source?: string | null
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          path?: string | null
+          referrer?: string | null
+          region?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device?: string | null
+          geo_source?: string | null
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          path?: string | null
+          referrer?: string | null
+          region?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
