@@ -187,8 +187,8 @@ const ContactSection = () => {
         url = `mailto:technofyph@gmail.com?subject=Inquiry - Technofy&body=${encodedMessage}`;
         break;
       case "messenger":
-        // Messenger with page username (without pre-filled text as it's not supported)
-        url = `https://m.me/technofy.ph`;
+        // Messenger with correct page username
+        url = `https://m.me/Technofyph`;
         toast({
           title: "Opening Messenger",
           description: "Please send your message in the chat that opens",
