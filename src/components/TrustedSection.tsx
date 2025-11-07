@@ -67,14 +67,17 @@ const TrustedSection = () => {
                   key={`set1-${index}`}
                   className="shrink-0 text-center"
                 >
-                  {/* White square - image only */}
-                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto border-0 ring-0 outline-none">
-                    <img
-                      src={client.logo}
-                      alt=""
-                      aria-hidden="true"
-                      className="block w-full h-full object-cover border-0 ring-0 outline-none"
-                    />
+                  {/* Shadow wrapper */}
+                  <div className="mx-auto filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_12px_32px_rgba(0,0,0,0.55)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                    {/* White square - image only */}
+                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none">
+                      <img
+                        src={client.logo}
+                        alt=""
+                        aria-hidden="true"
+                        className="block w-full h-full object-cover border-0 ring-0 outline-none"
+                      />
+                    </div>
                   </div>
                   {/* Text below square */}
                   <h4 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
@@ -94,14 +97,19 @@ const TrustedSection = () => {
                   key={`set2-${index}`}
                   className="shrink-0 text-center"
                 >
-                  <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px] flex items-center justify-center mx-auto border-0 ring-0 outline-none">
-                    <img
-                      src={client.logo}
-                      alt=""
-                      aria-hidden="true"
-                      className="block w-full h-full object-cover border-0 ring-0 outline-none"
-                    />
+                  {/* Shadow wrapper */}
+                  <div className="mx-auto filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_12px_32px_rgba(0,0,0,0.55)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                    {/* White square - image only */}
+                    <div className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center border-0 ring-0 outline-none">
+                      <img
+                        src={client.logo}
+                        alt=""
+                        aria-hidden="true"
+                        className="block w-full h-full object-cover border-0 ring-0 outline-none"
+                      />
+                    </div>
                   </div>
+                  {/* Text below square */}
                   <h4 className="mt-3 text-base font-medium text-[#1F1F1F] dark:text-[#EDEDED]">
                     {client.name}
                   </h4>
@@ -126,7 +134,7 @@ const TrustedSection = () => {
         }
 
         .animate-marquee {
-          animation: marquee 12s linear infinite;
+          animation: marquee 14s linear infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
