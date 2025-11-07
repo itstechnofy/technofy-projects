@@ -51,13 +51,7 @@ const TrustedSection = () => {
       </div>
 
       <div className="mt-10 overflow-hidden">
-        <div 
-          className="relative"
-          style={{
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-            maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)'
-          }}
-        >
+        <div className="relative">
           {/* Marquee track */}
           <div className="flex gap-9 animate-marquee will-change-transform [transform:translateZ(0)] [backface-visibility:hidden]">
             {/* First set */}
