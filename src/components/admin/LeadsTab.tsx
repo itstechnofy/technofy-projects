@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, type Lead } from "@/lib/dataService";
 import { Search, Download, Mail, MessageCircle, Send, ExternalLink } from "lucide-react";
+import { notifyLeadStatusChanged, notifyLeadNoteAdded, notifyLeadsExportComplete } from "@/lib/notificationService";
 import {
   Select,
   SelectContent,

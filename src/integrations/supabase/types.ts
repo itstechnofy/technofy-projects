@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          meta: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          meta?: Json | null
+          read?: boolean
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          created_at: string
+          desktop_push: boolean
+          dnd_enabled: boolean
+          dnd_end: string | null
+          dnd_start: string | null
+          id: string
+          sound_enabled: boolean
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          desktop_push?: boolean
+          dnd_enabled?: boolean
+          dnd_end?: string | null
+          dnd_start?: string | null
+          id?: string
+          sound_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          desktop_push?: boolean
+          dnd_enabled?: boolean
+          dnd_end?: string | null
+          dnd_start?: string | null
+          id?: string
+          sound_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           city: string | null

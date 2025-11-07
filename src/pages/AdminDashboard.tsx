@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { authService, rolesService } from "@/lib/dataService";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeadsTab from "@/components/admin/LeadsTab";
 import AnalyticsTab from "@/components/admin/AnalyticsTab";
+import NotificationBell from "@/components/admin/NotificationBell";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -58,8 +59,17 @@ const AdminDashboard = () => {
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-black">Admin Dashboard</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-600">Technofy</span>
+            <NotificationBell />
+            <Button 
+              onClick={() => navigate("/admin/settings")} 
+              variant="outline"
+              size="icon"
+              className="border-gray-200 hover:bg-gray-100"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
             <Button 
               onClick={handleLogout} 
               variant="outline"
