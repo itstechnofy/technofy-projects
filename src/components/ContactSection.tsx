@@ -294,7 +294,7 @@ const ContactSection = () => {
                           {countryCodes.find(c => c.code === countryCode)?.flag} {countryCode}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[300px] overflow-y-auto">
                         {countryCodes.map((country, index) => (
                           <SelectItem key={`${country.code}-${index}`} value={country.code}>
                             <span className="flex items-center gap-2">
