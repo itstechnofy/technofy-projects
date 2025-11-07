@@ -144,13 +144,27 @@ const AdminDashboard = () => {
       `Hi ${lead.name}, following up on your inquiry.`
     );
 
+    // Format phone number for international use (add + and country code if missing)
+    const formatPhoneForUrl = (phone: string | null): string => {
+      if (!phone) return "";
+      // Remove all non-numeric characters except +
+      let cleaned = phone.replace(/[^\d+]/g, "");
+      // If doesn't start with +, add +63 (Philippines country code)
+      if (!cleaned.startsWith("+")) {
+        cleaned = "+63" + cleaned;
+      }
+      return cleaned;
+    };
+
     let url = "";
     switch (lead.contact_method) {
       case "whatsapp":
-        url = `https://api.whatsapp.com/send?phone=${lead.phone}&text=${encodedMessage}`;
+        const whatsappPhone = formatPhoneForUrl(lead.phone);
+        url = `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodedMessage}`;
         break;
       case "viber":
-        url = `viber://chat?number=${lead.phone}`;
+        const viberPhone = formatPhoneForUrl(lead.phone).replace("+", "%2B");
+        url = `viber://chat?number=${viberPhone}`;
         break;
       case "email":
         url = `mailto:technofyph@gmail.com?subject=Re: Your Inquiry&body=${encodedMessage}`;
