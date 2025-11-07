@@ -112,8 +112,11 @@ const ContactSection = () => {
       const selectedCountry = countryCodes.find(c => c.code === countryCode);
       const actualDialCode = selectedCountry?.dialCode || countryCode;
       
+      // Clean phone number: remove leading zeros and spaces
+      let cleanedPhone = phone.trim().replace(/^0+/, '');
+      
       // Combine country code and phone number
-      const fullPhone = phone.trim() ? `${actualDialCode}${phone.trim()}` : undefined;
+      const fullPhone = cleanedPhone ? `${actualDialCode}${cleanedPhone}` : undefined;
       
       // Validate with zod schema
       const validatedData = contactSchema.parse({
@@ -157,7 +160,11 @@ const ContactSection = () => {
 
     const selectedCountry = countryCodes.find(c => c.code === countryCode);
     const actualDialCode = selectedCountry?.dialCode || countryCode;
-    const fullPhone = phone.trim() ? `${actualDialCode}${phone.trim()}` : "";
+    
+    // Clean phone number: remove leading zeros and spaces
+    let cleanedPhone = phone.trim().replace(/^0+/, '');
+    
+    const fullPhone = cleanedPhone ? `${actualDialCode}${cleanedPhone}` : "";
     const encodedMessage = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${fullPhone}\n\n${message}\n\nFound us via: ${source}`
     );
