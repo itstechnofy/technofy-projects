@@ -50,69 +50,81 @@ const TrustedSection = () => {
         </h2>
       </div>
 
-      <div className="relative mt-10">
-        {/* Edge fade gradients */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white dark:from-neutral-900 to-transparent z-10"></div>
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white dark:from-neutral-900 to-transparent z-10"></div>
+      <div className="mt-10 overflow-hidden">
+        <div 
+          className="relative"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+            maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)'
+          }}
+        >
+          {/* Marquee track */}
+          <div className="flex gap-8 animate-marquee will-change-transform">
+            {/* First set */}
+            <div className="flex gap-8">
+              {clients.map((client, index) => (
+                <article
+                  key={`set1-${index}`}
+                  className="shrink-0 w-[240px] sm:w-[280px] lg:w-[320px] text-center"
+                >
+                  {/* White square - image only */}
+                  <div className="bg-white rounded-[24px] ring-1 ring-black/5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 aspect-square flex items-center justify-center">
+                    <img
+                      src={client.logo}
+                      alt={client.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  {/* Text below square */}
+                  <h3 className="mt-4 text-lg font-medium text-[#1F1F1F]">
+                    {client.name}
+                  </h3>
+                  <p className="text-base text-[#2C2C2C]">
+                    {client.description}
+                  </p>
+                </article>
+              ))}
+            </div>
 
-        {/* Marquee container - continuous scroll */}
-        <div className="flex gap-6 animate-marquee will-change-transform">
-          {/* First set */}
-          {clients.map((client, index) => (
-            <article
-              key={`set1-${index}`}
-              className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] shrink-0 rounded-2xl bg-white p-4 flex flex-col items-center justify-center text-center"
-            >
-              <img
-                src={client.logo}
-                className="max-w-[80px] max-h-[80px] object-contain"
-                alt={client.name}
-              />
-              <h3 className="mt-4 text-base font-semibold text-neutral-900">
-                {client.name}
-              </h3>
-              <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
-                {client.description}
-              </p>
-            </article>
-          ))}
-
-          {/* Duplicate set for seamless loop */}
-          <div aria-hidden="true" className="flex gap-6">
-            {clients.map((client, index) => (
-              <article
-                key={`set2-${index}`}
-                className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] shrink-0 rounded-2xl bg-white p-4 flex flex-col items-center justify-center text-center"
-              >
-                <img
-                  src={client.logo}
-                  className="max-w-[80px] max-h-[80px] object-contain"
-                  alt={client.name}
-                />
-                <h3 className="mt-4 text-base font-semibold text-neutral-900">
-                  {client.name}
-                </h3>
-                <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
-                  {client.description}
-                </p>
-              </article>
-            ))}
+            {/* Duplicate set for seamless loop */}
+            <div aria-hidden="true" className="flex gap-8">
+              {clients.map((client, index) => (
+                <article
+                  key={`set2-${index}`}
+                  className="shrink-0 w-[240px] sm:w-[280px] lg:w-[320px] text-center"
+                >
+                  <div className="bg-white rounded-[24px] ring-1 ring-black/5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 aspect-square flex items-center justify-center">
+                    <img
+                      src={client.logo}
+                      alt={client.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <h3 className="mt-4 text-lg font-medium text-[#1F1F1F]">
+                    {client.name}
+                  </h3>
+                  <p className="text-base text-[#2C2C2C]">
+                    {client.description}
+                  </p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <style>{`
         @keyframes marquee {
-          0% {
+          from {
             transform: translateX(0);
           }
-          100% {
+          to {
             transform: translateX(-50%);
           }
         }
 
         .animate-marquee {
-          animation: marquee 14s linear infinite;
+          animation: marquee 20s linear infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
