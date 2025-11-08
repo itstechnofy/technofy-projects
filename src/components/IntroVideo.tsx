@@ -7,7 +7,6 @@ const IntroVideo = () => {
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const autoplayAttempted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -15,15 +14,15 @@ const IntroVideo = () => {
 
   // Simple autoplay on desktop only - check once on mount
   useEffect(() => {
-    // Prevent double execution in React Strict Mode
-    if (autoplayAttempted.current) return;
-    autoplayAttempted.current = true;
-    
     const isDesktop = window.innerWidth >= 768;
     
     if (isDesktop) {
       const timer = setTimeout(() => {
-        setIsPlaying(true);
+        // Only play if not already playing (prevents double sound in Strict Mode)
+        setIsPlaying(prev => {
+          if (prev) return prev; // Already playing, don't change
+          return true; // Not playing yet, start now
+        });
       }, 500);
       
       return () => clearTimeout(timer);
