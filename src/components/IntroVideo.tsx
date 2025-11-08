@@ -7,18 +7,20 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
+  const hasAutoplayedRef = useRef(false);
   const isMobile = useIsMobile();
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop only
+  // Autoplay on desktop only - run once
   useEffect(() => {
-    if (!isMobile) {
+    if (!isMobile && !hasAutoplayedRef.current) {
+      hasAutoplayedRef.current = true;
       const timer = setTimeout(() => {
         setIsPlaying(true);
-      }, 500); // Small delay for better UX
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [isMobile]);
