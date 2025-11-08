@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Button } from "./ui/button";
 
+// Change this to your Vimeo video ID
+const VIMEO_VIDEO_ID = "76979871"; // Example video - replace with your video ID
+
 interface IntroVideoProps {
   onVideoFocus?: (isFocused: boolean) => void;
 }
@@ -22,98 +25,82 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     setIsMuted(false); // Start with sound on
   };
 
-  const sendCommand = (func: string, args: string = "") => {
-    if (!videoRef.current) {
-      console.log('No video ref');
-      return;
-    }
+  const sendVimeoCommand = (method: string, value?: any) => {
+    if (!videoRef.current) return;
     
-    if (!playerReady.current) {
-      console.log('Player not ready');
-      return;
-    }
+    const data = value !== undefined 
+      ? { method, value }
+      : { method };
     
-    console.log('Sending command:', func);
-    videoRef.current.contentWindow?.postMessage(JSON.stringify({
-      event: "command",
-      func,
-      args
-    }), '*');
+    videoRef.current.contentWindow?.postMessage(JSON.stringify(data), '*');
   };
 
   const togglePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Toggle play/pause clicked, isPaused:', isPaused);
     
     if (isPaused) {
-      sendCommand("playVideo");
+      sendVimeoCommand("play");
       setIsPaused(false);
     } else {
-      sendCommand("pauseVideo");
+      sendVimeoCommand("pause");
       setIsPaused(true);
     }
   };
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Toggle mute clicked, isMuted:', isMuted);
     
     if (isMuted) {
-      sendCommand("unMute");
+      sendVimeoCommand("setVolume", 1);
       setIsMuted(false);
     } else {
-      sendCommand("mute");
+      sendVimeoCommand("setVolume", 0);
       setIsMuted(true);
     }
   };
 
-  // Handle video end for mobile and sync state
+  // Handle Vimeo player messages
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin === "https://www.youtube.com") {
-        try {
-          let parsedData = JSON.parse(event.data);
-          
-          // Sometimes YouTube sends double-encoded JSON
-          if (typeof parsedData === 'string') {
-            parsedData = JSON.parse(parsedData);
+      if (!event.origin.includes('vimeo.com')) return;
+      
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Player ready
+        if (data.event === "ready") {
+          playerReady.current = true;
+          // Set initial volume for desktop
+          const isDesktop = window.innerWidth >= 768;
+          if (isDesktop) {
+            sendVimeoCommand("setVolume", 1);
+            setIsMuted(false);
+          } else {
+            sendVimeoCommand("setVolume", 0);
+            setIsMuted(true);
           }
-          
-          // Player ready
-          if (parsedData.event === "onReady") {
-            playerReady.current = true;
-            // Don't mute on desktop for better UX
-            const isDesktop = window.innerWidth >= 768;
-            if (isDesktop) {
-              sendCommand("unMute");
-              setIsMuted(false);
-            } else {
-              sendCommand("mute");
-              setIsMuted(true);
-            }
-          }
-          
-          // Video state changes: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
-          if (parsedData.event === "onStateChange") {
-            if (parsedData.info === 0) {
-              // Video ended
-              const isDesktop = window.innerWidth >= 768;
-              if (!isDesktop) {
-                setIsPlaying(false);
-                setIsPaused(false);
-                playerReady.current = false;
-              }
-            } else if (parsedData.info === 1) {
-              // Playing
-              setIsPaused(false);
-            } else if (parsedData.info === 2) {
-              // Paused
-              setIsPaused(true);
-            }
-          }
-        } catch (e) {
-          // Ignore parse errors
         }
+        
+        // Track play/pause state
+        if (data.event === "play") {
+          setIsPaused(false);
+        }
+        
+        if (data.event === "pause") {
+          setIsPaused(true);
+        }
+        
+        // Video ended - reset on mobile only
+        if (data.event === "ended") {
+          const isDesktop = window.innerWidth >= 768;
+          if (!isDesktop) {
+            setIsPlaying(false);
+            setIsPaused(false);
+            playerReady.current = false;
+          }
+        }
+      } catch (e) {
+        // Ignore parse errors
       }
     };
 
@@ -224,15 +211,15 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
             </div>
           )}
           
-          {/* Video player - full cinematic experience */}
+          {/* Video player - Vimeo for reliable API control */}
           {isPlaying && (
             <div className="absolute inset-0 bg-black">
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
+                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&background=0&api=1`}
                 title="Showreel video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
               />
               
