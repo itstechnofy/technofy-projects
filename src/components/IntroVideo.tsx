@@ -7,6 +7,7 @@ const IntroVideo = () => {
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const autoplayAttempted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -14,6 +15,10 @@ const IntroVideo = () => {
 
   // Simple autoplay on desktop only - check once on mount
   useEffect(() => {
+    // Prevent double execution in React Strict Mode
+    if (autoplayAttempted.current) return;
+    autoplayAttempted.current = true;
+    
     const isDesktop = window.innerWidth >= 768;
     
     if (isDesktop) {
