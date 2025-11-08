@@ -14,14 +14,15 @@ const IntroVideo = () => {
 
   // Autoplay on desktop
   useEffect(() => {
-    const isDesktop = window.innerWidth >= 768;
-    if (!isDesktop) return;
-    
-    // If already ran, skip
+    // Check if already ran FIRST (before any other logic)
     if (effectRan.current) return;
     
-    // Mark as running
+    // Mark immediately to block second run in Strict Mode
     effectRan.current = true;
+    
+    // Now check if desktop
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) return;
     
     const timer = setTimeout(() => {
       setIsPlaying(true);
