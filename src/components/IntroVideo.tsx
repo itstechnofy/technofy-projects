@@ -12,24 +12,24 @@ const IntroVideo = () => {
   const isMobile = useIsMobile();
 
   const handlePlay = () => {
-    if (!hasAutoplayedRef.current) {
-      hasAutoplayedRef.current = true;
-      setIsPlaying(true);
-    }
+    setIsPlaying(true);
   };
 
-  // Autoplay on desktop only - run once
+  // Autoplay on desktop only - run once on mount
   useEffect(() => {
-    if (!isMobile && !hasAutoplayedRef.current && !isPlaying) {
-      const timer = setTimeout(() => {
-        if (!hasAutoplayedRef.current) {
-          hasAutoplayedRef.current = true;
-          setIsPlaying(true);
-        }
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isMobile, isPlaying]);
+    // Skip if mobile or already attempted autoplay
+    if (isMobile || hasAutoplayedRef.current) return;
+    
+    // Mark as attempted immediately to prevent double execution
+    hasAutoplayedRef.current = true;
+    
+    // Delay before starting
+    const timer = setTimeout(() => {
+      setIsPlaying(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array - only run on mount
 
   useEffect(() => {
     const handleScroll = () => {
