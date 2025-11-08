@@ -12,12 +12,13 @@ interface IntroVideoProps {
 const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
   const playerReady = useRef(false);
+  const hasUnmuted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -76,23 +77,33 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           sendVimeoCommand("addEventListener", "ended");
         }
         
-        // Track play/pause state
+        // Track play state and unmute on desktop after video starts
         if (data.event === "play") {
           setIsPaused(false);
+          
+          // Unmute on desktop only after first play to prevent double sound
+          if (!hasUnmuted.current) {
+            const isDesktop = window.innerWidth >= 768;
+            if (isDesktop) {
+              setTimeout(() => {
+                sendVimeoCommand("setVolume", 1);
+                setIsMuted(false);
+                hasUnmuted.current = true;
+              }, 200);
+            }
+          }
         }
         
         if (data.event === "pause") {
           setIsPaused(true);
         }
         
-        // Video ended - reset on mobile only
+        // Video ended - reset to poster
         if (data.event === "ended") {
-          const isDesktop = window.innerWidth >= 768;
-          if (!isDesktop) {
-            setIsPlaying(false);
-            setIsPaused(false);
-            playerReady.current = false;
-          }
+          setIsPlaying(false);
+          setIsPaused(false);
+          playerReady.current = false;
+          hasUnmuted.current = false;
         }
       } catch (e) {
         // Ignore parse errors
@@ -212,7 +223,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
+                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
                 title="Showreel video"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
