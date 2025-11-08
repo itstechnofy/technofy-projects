@@ -23,8 +23,17 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   };
 
   const sendCommand = (func: string, args: string = "") => {
-    if (!videoRef.current || !playerReady.current) return;
+    if (!videoRef.current) {
+      console.log('No video ref');
+      return;
+    }
     
+    if (!playerReady.current) {
+      console.log('Player not ready');
+      return;
+    }
+    
+    console.log('Sending command:', func);
     videoRef.current.contentWindow?.postMessage(JSON.stringify({
       event: "command",
       func,
@@ -32,15 +41,23 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     }), '*');
   };
 
-  const togglePlayPause = () => {
+  const togglePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Toggle play/pause clicked, isPaused:', isPaused);
+    
     if (isPaused) {
       sendCommand("playVideo");
+      setIsPaused(false);
     } else {
       sendCommand("pauseVideo");
+      setIsPaused(true);
     }
   };
 
-  const toggleMute = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Toggle mute clicked, isMuted:', isMuted);
+    
     if (isMuted) {
       sendCommand("unMute");
       setIsMuted(false);
@@ -219,15 +236,16 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
                 allowFullScreen
               />
               
-              {/* Overlay to prevent click-to-pause on desktop */}
-              <div className="absolute inset-0 z-10 md:block hidden pointer-events-none" />
+              {/* Overlay to prevent click-to-pause on desktop - but allow button clicks */}
+              <div className="absolute inset-0 z-10 md:block hidden pointer-events-auto" onClick={(e) => e.preventDefault()} />
 
-              {/* Custom controls - bottom right with proper spacing */}
-              <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-20 hidden md:flex items-center gap-3">
+              {/* Custom controls - bottom right with proper spacing and click handling */}
+              <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-30 hidden md:flex items-center gap-3 pointer-events-auto">
                 <button
                   onClick={togglePlayPause}
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110"
+                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
                   aria-label={isPaused ? "Play video" : "Pause video"}
+                  type="button"
                 >
                   {isPaused ? (
                     <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
@@ -238,8 +256,9 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
 
                 <button
                   onClick={toggleMute}
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110"
+                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
                   aria-label={isMuted ? "Unmute video" : "Mute video"}
+                  type="button"
                 >
                   {isMuted ? (
                     <VolumeX className="w-5 h-5 text-black" />
