@@ -46,14 +46,17 @@ const IntroVideo = () => {
 
       // Calculate how close section is to viewport center
       const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
-      const maxDistance = windowHeight;
+      const maxDistance = windowHeight / 2;
       
       // When section is in view
       if (sectionTop < windowHeight && sectionTop + sectionHeight > 0) {
-        // Scale from 0.85 to 1.0 based on proximity to center
+        // Scale from 0.85 to 1.2 for dramatic cinematic effect
         const centeredness = Math.max(0, 1 - distanceFromCenter / maxDistance);
-        const newScale = 0.85 + (centeredness * 0.15); // 0.85 to 1.0
+        const newScale = 0.85 + (centeredness * 0.35); // 0.85 to 1.2
         setScale(newScale);
+      } else {
+        // Reset to small when out of view
+        setScale(0.85);
       }
     };
 
