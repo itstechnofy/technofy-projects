@@ -22,7 +22,11 @@ const IntroVideo = () => {
     if (!isDesktop) return;
     
     const timer = setTimeout(() => {
-      setIsPlaying(true);
+      // Double-check we haven't already started playing
+      setIsPlaying(prev => {
+        if (prev) return prev; // Already playing, don't change
+        return true; // Start playing
+      });
     }, 500);
     
     return () => clearTimeout(timer);
@@ -88,9 +92,10 @@ const IntroVideo = () => {
               </div>
             </>
           )}
-          {/* Video player - no controls */}
+          {/* Video player - stable key prevents remounting */}
           {isPlaying && (
             <iframe
+              key="video-player-single"
               className="absolute inset-0 h-full w-full"
               src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0"
               title="Showreel video"
