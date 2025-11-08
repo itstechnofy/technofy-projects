@@ -33,7 +33,7 @@ const WeBelieveSection = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const gradientClass = "bg-gradient-to-r from-[#9B87F5] to-[#F97BBD] bg-clip-text text-transparent";
+  const gradientClass = "bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent";
   const normalClass = "text-muted-foreground";
 
   return (
