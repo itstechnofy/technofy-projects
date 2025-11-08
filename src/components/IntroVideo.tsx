@@ -6,28 +6,10 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
-  const autoplayTriggered = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
-
-  // Smooth autoplay on desktop after initial load
-  useEffect(() => {
-    if (autoplayTriggered.current) return;
-    
-    const isDesktop = window.innerWidth >= 768;
-    if (!isDesktop) return;
-
-    const autoplayTimer = setTimeout(() => {
-      autoplayTriggered.current = true;
-      setIsPlaying(true);
-    }, 1500);
-
-    return () => {
-      clearTimeout(autoplayTimer);
-    };
-  }, []);
 
   // Scroll-based expansion effect
   useEffect(() => {
@@ -56,13 +38,13 @@ const IntroVideo = () => {
           const newScale = 0.85 + (centeredness * 0.35);
           setScale(newScale);
         } else {
-          // Mobile: slight expansion (0.95 to 1.05)
-          const newScale = 0.95 + (centeredness * 0.10);
+          // Mobile: very subtle expansion (0.98 to 1.02)
+          const newScale = 0.98 + (centeredness * 0.04);
           setScale(newScale);
         }
       } else {
         // Reset to initial scale when out of view
-        setScale(isDesktop ? 0.85 : 0.95);
+        setScale(isDesktop ? 0.85 : 0.98);
       }
     };
 
@@ -102,7 +84,7 @@ const IntroVideo = () => {
                 <Button
                   onClick={handlePlay}
                   size="lg"
-                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-black border-2 border-white/30 font-semibold px-6 py-6 md:px-8 md:py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-3 md:gap-4 group-hover:border-white/50"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-semibold px-6 py-6 md:px-8 md:py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-3 md:gap-4 group-hover:border-white/50"
                 >
                   <Play className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
                   <span className="text-lg md:text-xl tracking-wide">See Showreel</span>
