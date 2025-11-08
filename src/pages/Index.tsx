@@ -1,3 +1,4 @@
+import { useState } from "react";
 import TopNavbar from "@/components/TopNavbar";
 import BottomNav from "@/components/BottomNav";
 import Hero from "@/components/Hero";
@@ -10,12 +11,14 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
+  const [isVideoFocused, setIsVideoFocused] = useState(false);
+
   return (
     <div className="min-h-screen pb-28">
-      <TopNavbar />
+      <TopNavbar isHidden={isVideoFocused} />
       <Hero />
       <TrustedSection />
-      <IntroVideo />
+      <IntroVideo onVideoFocus={setIsVideoFocused} />
       <WorkGrid />
       <WeBelieveSection />
       <ServicesGrid />

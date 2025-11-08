@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
 import { DARK_MODE_ENABLED } from "@/config/theme";
 
-const TopNavbar = () => {
+interface TopNavbarProps {
+  isHidden?: boolean;
+}
+
+const TopNavbar = ({ isHidden = false }: TopNavbarProps) => {
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -12,7 +16,7 @@ const TopNavbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border transition-colors">
+    <nav className={`sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border transition-all duration-500 ${isHidden ? 'opacity-0 -translate-y-full pointer-events-none' : 'opacity-100 translate-y-0'}`}>
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex-shrink-0">
