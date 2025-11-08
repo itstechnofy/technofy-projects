@@ -17,8 +17,11 @@ const IntroVideo = () => {
 
   // Autoplay on desktop only - run once on mount
   useEffect(() => {
-    // Skip if mobile or already attempted autoplay
-    if (isMobile || hasAutoplayedRef.current) return;
+    // Check ref first - if we've already tried autoplay, exit immediately
+    if (hasAutoplayedRef.current) return;
+    
+    // Skip if mobile
+    if (isMobile) return;
     
     // Mark as attempted immediately to prevent double execution
     hasAutoplayedRef.current = true;
@@ -29,7 +32,7 @@ const IntroVideo = () => {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array - only run on mount
+  }, [isMobile]); // Include isMobile to respond when it's determined
 
   useEffect(() => {
     const handleScroll = () => {
