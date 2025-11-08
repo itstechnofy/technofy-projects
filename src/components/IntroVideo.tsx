@@ -20,15 +20,13 @@ const IntroVideo = () => {
     // Skip if mobile
     if (isMobile) return;
     
-    // Check ref AFTER mobile check - if we've already tried autoplay on desktop, exit
-    if (hasAutoplayedRef.current) return;
-    
-    // Mark as attempted immediately to prevent double execution
-    hasAutoplayedRef.current = true;
-    
     // Delay before starting
     const timer = setTimeout(() => {
-      setIsPlaying(true);
+      // Only set playing if not already playing (prevents double sound)
+      if (!hasAutoplayedRef.current) {
+        hasAutoplayedRef.current = true;
+        setIsPlaying(true);
+      }
     }, 500);
     
     return () => clearTimeout(timer);
