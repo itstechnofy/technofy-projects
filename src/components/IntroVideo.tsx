@@ -1,15 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 import { Button } from "./ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
+
+  // Autoplay on desktop only
+  useEffect(() => {
+    if (!isMobile) {
+      const timer = setTimeout(() => {
+        setIsPlaying(true);
+      }, 500); // Small delay for better UX
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const handleScroll = () => {
