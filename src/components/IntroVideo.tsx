@@ -6,21 +6,13 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
-  const effectRan = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop
+  // Autoplay on desktop - simple and working
   useEffect(() => {
-    // Check if already ran FIRST (before any other logic)
-    if (effectRan.current) return;
-    
-    // Mark immediately to block second run in Strict Mode
-    effectRan.current = true;
-    
-    // Now check if desktop
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
     
@@ -91,12 +83,11 @@ const IntroVideo = () => {
               </div>
             </>
           )}
-          {/* Video player - key ensures single instance */}
+          {/* Video player */}
           {isPlaying && (
             <iframe
-              key="youtube-player"
               className="absolute inset-0 h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
               title="Showreel video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
