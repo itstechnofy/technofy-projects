@@ -7,29 +7,51 @@ const IntroVideo = () => {
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
   const mounted = useRef(false);
+  const videoInitialized = useRef(false);
 
   const handlePlay = () => {
+    if (videoInitialized.current) {
+      console.log("Video already initialized, ignoring play request");
+      return;
+    }
+    console.log("Playing video");
+    videoInitialized.current = true;
     setIsPlaying(true);
   };
 
   // Autoplay on desktop - properly prevent double execution
   useEffect(() => {
+    console.log("IntroVideo mounted, mounted.current:", mounted.current);
+    
     // In Strict Mode, this runs twice. First check blocks second run.
-    if (mounted.current) return;
+    if (mounted.current) {
+      console.log("Already mounted, skipping autoplay setup");
+      return;
+    }
     mounted.current = true;
     
     const isDesktop = window.innerWidth >= 768;
-    if (!isDesktop) return;
+    if (!isDesktop) {
+      console.log("Mobile device, skipping autoplay");
+      return;
+    }
     
+    console.log("Desktop detected, setting up autoplay timer");
     const timer = setTimeout(() => {
+      console.log("Autoplay timer fired, videoInitialized:", videoInitialized.current);
       // Double-check we haven't already started playing
-      setIsPlaying(prev => {
-        if (prev) return prev; // Already playing, don't change
-        return true; // Start playing
-      });
+      if (videoInitialized.current) {
+        console.log("Video already initialized, skipping autoplay");
+        return;
+      }
+      videoInitialized.current = true;
+      setIsPlaying(true);
     }, 500);
     
-    return () => clearTimeout(timer);
+    return () => {
+      console.log("IntroVideo cleanup");
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
