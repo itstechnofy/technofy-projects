@@ -22,7 +22,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const handlePlay = () => {
     setIsPlaying(true);
     setIsPaused(false);
-    setIsMuted(false); // Start with sound on
+    setIsMuted(true); // Start muted to prevent double sound
   };
 
   const sendVimeoCommand = (method: string, value?: any) => {
@@ -70,15 +70,14 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         // Player ready
         if (data.event === "ready") {
           playerReady.current = true;
-          // Set initial volume for desktop
-          const isDesktop = window.innerWidth >= 768;
-          if (isDesktop) {
-            sendVimeoCommand("setVolume", 1);
-            setIsMuted(false);
-          } else {
-            sendVimeoCommand("setVolume", 0);
-            setIsMuted(true);
-          }
+          // Always start muted to prevent double sound issue
+          sendVimeoCommand("setVolume", 0);
+          setIsMuted(true);
+          
+          // Enable event listening
+          sendVimeoCommand("addEventListener", "play");
+          sendVimeoCommand("addEventListener", "pause");
+          sendVimeoCommand("addEventListener", "ended");
         }
         
         // Track play/pause state
@@ -217,13 +216,14 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&background=0&api=1`}
+                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
                 title="Showreel video"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
+                frameBorder="0"
               />
               
-              {/* Overlay to prevent click-to-pause on desktop - but allow button clicks */}
+              {/* Overlay to prevent direct video clicks on desktop */}
               <div className="absolute inset-0 z-10 md:block hidden pointer-events-auto" onClick={(e) => e.preventDefault()} />
 
               {/* Custom controls - bottom right with proper spacing and click handling */}
