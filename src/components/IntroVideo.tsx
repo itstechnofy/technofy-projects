@@ -6,13 +6,18 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
+  const mounted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop - simple and working
+  // Autoplay on desktop - properly prevent double execution
   useEffect(() => {
+    // In Strict Mode, this runs twice. First check blocks second run.
+    if (mounted.current) return;
+    mounted.current = true;
+    
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
     
