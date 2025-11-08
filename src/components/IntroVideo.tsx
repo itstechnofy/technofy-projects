@@ -44,7 +44,7 @@ const IntroVideo = () => {
     <section ref={sectionRef} id="intro-video" className="py-8 md:py-16 my-12 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         <div 
-          className="relative aspect-video rounded-2xl shadow-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 transition-transform duration-300 ease-out"
+          className="relative aspect-video rounded-2xl shadow-lg overflow-hidden bg-neutral-200 dark:bg-neutral-800 transition-transform duration-300 ease-out"
           style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}
         >
           {/* Poster */}
