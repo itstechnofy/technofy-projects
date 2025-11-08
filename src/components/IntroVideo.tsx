@@ -83,11 +83,11 @@ const IntroVideo = () => {
               </div>
             </>
           )}
-          {/* Video player */}
+          {/* Video player - no controls */}
           {isPlaying && (
             <iframe
               className="absolute inset-0 h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0"
               title="Showreel video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
