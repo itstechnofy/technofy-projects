@@ -14,59 +14,38 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
+  const playerReady = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
     setIsPaused(false);
-    // Mute initially on autoplay to avoid audio issues
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.contentWindow?.postMessage(JSON.stringify({
-          event: "command",
-          func: "mute",
-          args: ""
-        }), '*');
-        setIsMuted(true);
-      }
-    }, 500);
+    setIsMuted(true); // Start muted by default
+  };
+
+  const sendCommand = (func: string, args: string = "") => {
+    if (!videoRef.current || !playerReady.current) return;
+    
+    videoRef.current.contentWindow?.postMessage(JSON.stringify({
+      event: "command",
+      func,
+      args
+    }), '*');
   };
 
   const togglePlayPause = () => {
-    if (!videoRef.current) return;
-    
     if (isPaused) {
-      videoRef.current.contentWindow?.postMessage(JSON.stringify({
-        event: "command",
-        func: "playVideo",
-        args: ""
-      }), '*');
-      setIsPaused(false);
+      sendCommand("playVideo");
     } else {
-      videoRef.current.contentWindow?.postMessage(JSON.stringify({
-        event: "command",
-        func: "pauseVideo",
-        args: ""
-      }), '*');
-      setIsPaused(true);
+      sendCommand("pauseVideo");
     }
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
-    
     if (isMuted) {
-      videoRef.current.contentWindow?.postMessage(JSON.stringify({
-        event: "command",
-        func: "unMute",
-        args: ""
-      }), '*');
+      sendCommand("unMute");
       setIsMuted(false);
     } else {
-      videoRef.current.contentWindow?.postMessage(JSON.stringify({
-        event: "command",
-        func: "mute",
-        args: ""
-      }), '*');
+      sendCommand("mute");
       setIsMuted(true);
     }
   };
@@ -83,6 +62,13 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
             parsedData = JSON.parse(parsedData);
           }
           
+          // Player ready
+          if (parsedData.event === "onReady") {
+            playerReady.current = true;
+            // Mute immediately when player is ready
+            sendCommand("mute");
+          }
+          
           // Video state changes: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
           if (parsedData.event === "onStateChange") {
             if (parsedData.info === 0) {
@@ -91,6 +77,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               if (!isDesktop) {
                 setIsPlaying(false);
                 setIsPaused(false);
+                playerReady.current = false;
               }
             } else if (parsedData.info === 1) {
               // Playing
@@ -216,41 +203,41 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           {/* Video player - full cinematic experience */}
           {isPlaying && (
             <div className="absolute inset-0 bg-black">
-              {/* Overlay to prevent click-to-pause on desktop */}
-              <div className="absolute inset-0 z-10 md:block hidden" />
-              
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
+                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
                 title="Showreel video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
+              
+              {/* Overlay to prevent click-to-pause on desktop */}
+              <div className="absolute inset-0 z-10 md:block hidden pointer-events-none" />
 
               {/* Custom controls - bottom right (desktop only) */}
-              <div className="absolute bottom-6 right-6 z-20 hidden md:flex items-center gap-3">
+              <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-20 hidden md:flex items-center gap-2 md:gap-3">
                 <button
                   onClick={togglePlayPause}
-                  className="w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
                   aria-label={isPaused ? "Play video" : "Pause video"}
                 >
                   {isPaused ? (
-                    <Play className="w-5 h-5 text-black" fill="currentColor" />
+                    <Play className="w-4 h-4 md:w-5 md:h-5 text-black ml-0.5" fill="currentColor" />
                   ) : (
-                    <Pause className="w-5 h-5 text-black" fill="currentColor" />
+                    <Pause className="w-4 h-4 md:w-5 md:h-5 text-black" fill="currentColor" />
                   )}
                 </button>
 
                 <button
                   onClick={toggleMute}
-                  className="w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
                   aria-label={isMuted ? "Unmute video" : "Mute video"}
                 >
                   {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-black" />
+                    <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-black" />
                   ) : (
-                    <Volume2 className="w-5 h-5 text-black" />
+                    <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-black" />
                   )}
                 </button>
               </div>
