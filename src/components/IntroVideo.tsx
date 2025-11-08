@@ -6,22 +6,29 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
+  const effectRan = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop - let it run, but state prevents double iframe
+  // Autoplay on desktop
   useEffect(() => {
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
     
+    // If already ran, skip
+    if (effectRan.current) return;
+    
+    // Mark as running
+    effectRan.current = true;
+    
     const timer = setTimeout(() => {
-      setIsPlaying(true); // State change only happens once even if effect runs twice
+      setIsPlaying(true);
     }, 500);
     
     return () => clearTimeout(timer);
-  }, []); // Empty deps
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
