@@ -16,14 +16,14 @@ const IntroVideo = () => {
 
   // Autoplay on desktop only - run once
   useEffect(() => {
-    if (!isMobile && !hasAutoplayedRef.current) {
-      hasAutoplayedRef.current = true;
+    if (!isMobile && !hasAutoplayedRef.current && !isPlaying) {
       const timer = setTimeout(() => {
+        hasAutoplayedRef.current = true;
         setIsPlaying(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isMobile]);
+  }, [isMobile, isPlaying]);
 
   useEffect(() => {
     const handleScroll = () => {
