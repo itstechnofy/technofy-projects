@@ -1,36 +1,29 @@
 import { useState, useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 import { Button } from "./ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const hasAutoplayedRef = useRef(false);
-  const isMobile = useIsMobile();
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop only - run once on mount
+  // Simple autoplay on desktop only - check once on mount
   useEffect(() => {
-    // Skip if mobile
-    if (isMobile) return;
+    const isDesktop = window.innerWidth >= 768;
     
-    // Delay before starting
-    const timer = setTimeout(() => {
-      // Only set playing if not already playing (prevents double sound)
-      if (!hasAutoplayedRef.current) {
-        hasAutoplayedRef.current = true;
+    if (isDesktop) {
+      const timer = setTimeout(() => {
         setIsPlaying(true);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [isMobile]); // Include isMobile to respond when it's determined
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // Empty array - only run once on mount
 
   useEffect(() => {
     const handleScroll = () => {
