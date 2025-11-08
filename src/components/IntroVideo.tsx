@@ -77,20 +77,17 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           sendVimeoCommand("addEventListener", "ended");
         }
         
-        // Track play state and unmute on desktop after video starts
+        // Track play state and unmute after video starts (both mobile and desktop)
         if (data.event === "play") {
           setIsPaused(false);
           
-          // Unmute on desktop only after first play to prevent double sound
+          // Unmute after play starts to prevent double sound
           if (!hasUnmuted.current) {
-            const isDesktop = window.innerWidth >= 768;
-            if (isDesktop) {
-              setTimeout(() => {
-                sendVimeoCommand("setVolume", 1);
-                setIsMuted(false);
-                hasUnmuted.current = true;
-              }, 200);
-            }
+            setTimeout(() => {
+              sendVimeoCommand("setVolume", 1);
+              setIsMuted(false);
+              hasUnmuted.current = true;
+            }, 300);
           }
         }
         
