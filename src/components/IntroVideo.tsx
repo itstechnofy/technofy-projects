@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Play } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface IntroVideoProps {
@@ -8,13 +8,65 @@ interface IntroVideoProps {
 
 const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
+    setIsPaused(false);
   };
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return;
+    
+    if (isPaused) {
+      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      setIsPaused(false);
+    } else {
+      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      setIsPaused(true);
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    
+    if (isMuted) {
+      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+      setIsMuted(false);
+    } else {
+      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"mute","args":""}', '*');
+      setIsMuted(true);
+    }
+  };
+
+  // Handle video end for mobile
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin === "https://www.youtube.com") {
+        try {
+          const data = JSON.parse(event.data);
+          // Video ended (state 0)
+          if (data.event === "onStateChange" && data.info === 0) {
+            const isDesktop = window.innerWidth >= 768;
+            if (!isDesktop) {
+              setIsPlaying(false);
+              setIsPaused(false);
+            }
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // Smooth autoplay on desktop after initial load
   useEffect(() => {
@@ -122,13 +174,44 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           {/* Video player - full cinematic experience */}
           {isPlaying && (
             <div className="absolute inset-0 bg-black">
+              {/* Overlay to prevent click-to-pause on desktop */}
+              <div className="absolute inset-0 z-10 md:block hidden" />
+              
               <iframe
+                ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=1&enablejsapi=1"
+                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
                 title="Showreel video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
+
+              {/* Custom controls - bottom right (desktop only) */}
+              <div className="absolute bottom-6 right-6 z-20 hidden md:flex items-center gap-3">
+                <button
+                  onClick={togglePlayPause}
+                  className="w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  aria-label={isPaused ? "Play video" : "Pause video"}
+                >
+                  {isPaused ? (
+                    <Play className="w-5 h-5 text-black" fill="currentColor" />
+                  ) : (
+                    <Pause className="w-5 h-5 text-black" fill="currentColor" />
+                  )}
+                </button>
+
+                <button
+                  onClick={toggleMute}
+                  className="w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  aria-label={isMuted ? "Unmute video" : "Mute video"}
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-5 h-5 text-black" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 text-black" />
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
