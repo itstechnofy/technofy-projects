@@ -17,11 +17,11 @@ const IntroVideo = () => {
 
   // Autoplay on desktop only - run once on mount
   useEffect(() => {
-    // Check ref first - if we've already tried autoplay, exit immediately
-    if (hasAutoplayedRef.current) return;
-    
     // Skip if mobile
     if (isMobile) return;
+    
+    // Check ref AFTER mobile check - if we've already tried autoplay on desktop, exit
+    if (hasAutoplayedRef.current) return;
     
     // Mark as attempted immediately to prevent double execution
     hasAutoplayedRef.current = true;
