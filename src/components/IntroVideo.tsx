@@ -6,32 +6,22 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const hasTriedAutoplay = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Autoplay on desktop only - properly handle React Strict Mode
+  // Autoplay on desktop - let it run, but state prevents double iframe
   useEffect(() => {
-    // CRITICAL: Check ref at the very start, before any other logic
-    if (hasTriedAutoplay.current) return;
-    
-    // Mark immediately to prevent Strict Mode double execution
-    hasTriedAutoplay.current = true;
-    
-    // Check if desktop
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
     
-    // Start autoplay
     const timer = setTimeout(() => {
-      setIsPlaying(true);
+      setIsPlaying(true); // State change only happens once even if effect runs twice
     }, 500);
     
     return () => clearTimeout(timer);
-  }, []); // Empty deps - run once on mount
+  }, []); // Empty deps
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,13 +83,12 @@ const IntroVideo = () => {
               </div>
             </>
           )}
-          {/* Video player */}
+          {/* Video player - key ensures single instance */}
           {isPlaying && (
             <iframe
-              ref={iframeRef}
-              key="video-iframe"
+              key="youtube-player"
               className="absolute inset-0 h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&enablejsapi=1"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0"
               title="Showreel video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
