@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 
 const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
   const autoplayTriggered = useRef(false);
 
@@ -19,35 +19,63 @@ const IntroVideo = () => {
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
 
-    // Delay to ensure smooth page load
-    const loadTimer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 800);
-
     const autoplayTimer = setTimeout(() => {
       autoplayTriggered.current = true;
       setIsPlaying(true);
     }, 1500);
 
     return () => {
-      clearTimeout(loadTimer);
       clearTimeout(autoplayTimer);
     };
+  }, []);
+
+  // Scroll-based expansion effect (desktop only)
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) return; // No scroll effect on mobile
+
+    const handleScroll = () => {
+      if (!sectionRef.current) return;
+
+      const rect = sectionRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const sectionTop = rect.top;
+      const sectionHeight = rect.height;
+      const sectionCenter = sectionTop + sectionHeight / 2;
+      const viewportCenter = windowHeight / 2;
+
+      // Calculate how close section is to viewport center
+      const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
+      const maxDistance = windowHeight;
+      
+      // When section is in view
+      if (sectionTop < windowHeight && sectionTop + sectionHeight > 0) {
+        // Scale from 0.85 to 1.0 based on proximity to center
+        const centeredness = Math.max(0, 1 - distanceFromCenter / maxDistance);
+        const newScale = 0.85 + (centeredness * 0.15); // 0.85 to 1.0
+        setScale(newScale);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial call
+
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <section 
       ref={sectionRef} 
       id="intro-video" 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background py-20"
+      className="py-8 md:py-20 my-8 md:my-16 overflow-hidden"
     >
-      {/* Cinematic container */}
-      <div className="w-full max-w-[95vw] mx-auto px-4">
+      {/* Mobile: compact container, Desktop: cinematic full-width */}
+      <div className="max-w-4xl md:max-w-[95vw] mx-auto px-4 md:px-6">
         <div 
-          className={`relative w-full transition-all duration-1000 ease-out ${
-            isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-          }`}
-          style={{ aspectRatio: '16/9' }}
+          className="relative aspect-video rounded-xl md:rounded-3xl shadow-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 transition-transform duration-700 ease-out"
+          style={{ 
+            transform: window.innerWidth >= 768 ? `scale(${scale})` : 'scale(1)',
+          }}
         >
           {/* Cinematic overlay and poster */}
           {!isPlaying && (
@@ -60,15 +88,15 @@ const IntroVideo = () => {
               {/* Cinematic vignette overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40" />
               
-              {/* Play button - centered and cinematic */}
+              {/* Play button - responsive sizing */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <Button
                   onClick={handlePlay}
                   size="lg"
-                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-semibold px-8 py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-4 group-hover:border-white/50"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-semibold px-6 py-6 md:px-8 md:py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-3 md:gap-4 group-hover:border-white/50"
                 >
-                  <Play className="w-6 h-6" fill="currentColor" />
-                  <span className="text-xl tracking-wide">See Showreel</span>
+                  <Play className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
+                  <span className="text-lg md:text-xl tracking-wide">See Showreel</span>
                 </Button>
               </div>
             </div>
