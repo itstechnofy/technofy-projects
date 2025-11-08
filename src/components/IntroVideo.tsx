@@ -7,27 +7,31 @@ const IntroVideo = () => {
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hasTriedAutoplay = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
   };
 
-  // Simple autoplay on desktop only - check once on mount
+  // Autoplay on desktop only - properly handle React Strict Mode
   useEffect(() => {
-    const isDesktop = window.innerWidth >= 768;
+    // CRITICAL: Check ref at the very start, before any other logic
+    if (hasTriedAutoplay.current) return;
     
-    if (isDesktop) {
-      const timer = setTimeout(() => {
-        // Only play if not already playing (prevents double sound in Strict Mode)
-        setIsPlaying(prev => {
-          if (prev) return prev; // Already playing, don't change
-          return true; // Not playing yet, start now
-        });
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []); // Empty array - only run once on mount
+    // Mark immediately to prevent Strict Mode double execution
+    hasTriedAutoplay.current = true;
+    
+    // Check if desktop
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) return;
+    
+    // Start autoplay
+    const timer = setTimeout(() => {
+      setIsPlaying(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []); // Empty deps - run once on mount
 
   useEffect(() => {
     const handleScroll = () => {
