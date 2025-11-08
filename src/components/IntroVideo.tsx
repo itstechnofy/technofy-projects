@@ -18,16 +18,35 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const handlePlay = () => {
     setIsPlaying(true);
     setIsPaused(false);
+    // Mute initially on autoplay to avoid audio issues
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.contentWindow?.postMessage(JSON.stringify({
+          event: "command",
+          func: "mute",
+          args: ""
+        }), '*');
+        setIsMuted(true);
+      }
+    }, 500);
   };
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;
     
     if (isPaused) {
-      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      videoRef.current.contentWindow?.postMessage(JSON.stringify({
+        event: "command",
+        func: "playVideo",
+        args: ""
+      }), '*');
       setIsPaused(false);
     } else {
-      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      videoRef.current.contentWindow?.postMessage(JSON.stringify({
+        event: "command",
+        func: "pauseVideo",
+        args: ""
+      }), '*');
       setIsPaused(true);
     }
   };
@@ -36,26 +55,49 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     if (!videoRef.current) return;
     
     if (isMuted) {
-      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+      videoRef.current.contentWindow?.postMessage(JSON.stringify({
+        event: "command",
+        func: "unMute",
+        args: ""
+      }), '*');
       setIsMuted(false);
     } else {
-      videoRef.current.contentWindow?.postMessage('{"event":"command","func":"mute","args":""}', '*');
+      videoRef.current.contentWindow?.postMessage(JSON.stringify({
+        event: "command",
+        func: "mute",
+        args: ""
+      }), '*');
       setIsMuted(true);
     }
   };
 
-  // Handle video end for mobile
+  // Handle video end for mobile and sync state
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin === "https://www.youtube.com") {
         try {
-          const data = JSON.parse(event.data);
-          // Video ended (state 0)
-          if (data.event === "onStateChange" && data.info === 0) {
-            const isDesktop = window.innerWidth >= 768;
-            if (!isDesktop) {
-              setIsPlaying(false);
+          let parsedData = JSON.parse(event.data);
+          
+          // Sometimes YouTube sends double-encoded JSON
+          if (typeof parsedData === 'string') {
+            parsedData = JSON.parse(parsedData);
+          }
+          
+          // Video state changes: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+          if (parsedData.event === "onStateChange") {
+            if (parsedData.info === 0) {
+              // Video ended
+              const isDesktop = window.innerWidth >= 768;
+              if (!isDesktop) {
+                setIsPlaying(false);
+                setIsPaused(false);
+              }
+            } else if (parsedData.info === 1) {
+              // Playing
               setIsPaused(false);
+            } else if (parsedData.info === 2) {
+              // Paused
+              setIsPaused(true);
             }
           }
         } catch (e) {
