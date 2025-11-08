@@ -29,11 +29,8 @@ const IntroVideo = () => {
     };
   }, []);
 
-  // Scroll-based expansion effect (desktop only)
+  // Scroll-based expansion effect
   useEffect(() => {
-    const isDesktop = window.innerWidth >= 768;
-    if (!isDesktop) return; // No scroll effect on mobile
-
     const handleScroll = () => {
       if (!sectionRef.current) return;
 
@@ -48,15 +45,24 @@ const IntroVideo = () => {
       const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
       const maxDistance = windowHeight / 2;
       
+      const isDesktop = window.innerWidth >= 768;
+      
       // When section is in view
       if (sectionTop < windowHeight && sectionTop + sectionHeight > 0) {
-        // Scale from 0.85 to 1.2 for dramatic cinematic effect
         const centeredness = Math.max(0, 1 - distanceFromCenter / maxDistance);
-        const newScale = 0.85 + (centeredness * 0.35); // 0.85 to 1.2
-        setScale(newScale);
+        
+        if (isDesktop) {
+          // Desktop: dramatic cinematic effect (0.85 to 1.2)
+          const newScale = 0.85 + (centeredness * 0.35);
+          setScale(newScale);
+        } else {
+          // Mobile: slight expansion (0.95 to 1.05)
+          const newScale = 0.95 + (centeredness * 0.10);
+          setScale(newScale);
+        }
       } else {
-        // Reset to small when out of view
-        setScale(0.85);
+        // Reset to initial scale when out of view
+        setScale(isDesktop ? 0.85 : 0.95);
       }
     };
 
@@ -75,9 +81,9 @@ const IntroVideo = () => {
       {/* Mobile: compact container, Desktop: cinematic full-width */}
       <div className="max-w-4xl md:max-w-[95vw] mx-auto px-4 md:px-6">
         <div 
-          className="relative aspect-video rounded-xl md:rounded-3xl shadow-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 transition-transform duration-700 ease-out"
+          className="relative aspect-video rounded-xl md:rounded-3xl shadow-md md:shadow-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 transition-transform duration-700 ease-out"
           style={{ 
-            transform: window.innerWidth >= 768 ? `scale(${scale})` : 'scale(1)',
+            transform: `scale(${scale})`,
           }}
         >
           {/* Cinematic overlay and poster */}
@@ -96,7 +102,7 @@ const IntroVideo = () => {
                 <Button
                   onClick={handlePlay}
                   size="lg"
-                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-semibold px-6 py-6 md:px-8 md:py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-3 md:gap-4 group-hover:border-white/50"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-black border-2 border-white/30 font-semibold px-6 py-6 md:px-8 md:py-8 rounded-full shadow-2xl hover:scale-110 transition-all duration-500 flex items-center gap-3 md:gap-4 group-hover:border-white/50"
                 >
                   <Play className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
                   <span className="text-lg md:text-xl tracking-wide">See Showreel</span>
@@ -110,7 +116,7 @@ const IntroVideo = () => {
             <div className="absolute inset-0 bg-black">
               <iframe
                 className="absolute inset-0 h-full w-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=1&modestbranding=1&rel=0&showinfo=0&fs=1"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=1&enablejsapi=1"
                 title="Showreel video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
