@@ -12,18 +12,16 @@ interface IntroVideoProps {
 const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
   const playerReady = useRef(false);
-  const hasUnmuted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
     setIsPaused(false);
-    setIsMuted(true); // Start muted to prevent double sound
   };
 
   const sendVimeoCommand = (method: string, value?: any) => {
@@ -78,21 +76,9 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           sendVimeoCommand("addEventListener", "ended");
         }
         
-        // Track play state - unmute on first play for desktop
+        // Track play/pause state
         if (data.event === "play") {
           setIsPaused(false);
-          
-          // Unmute on desktop after first play event to prevent double sound
-          if (!hasUnmuted.current) {
-            const isDesktop = window.innerWidth >= 768;
-            if (isDesktop) {
-              setTimeout(() => {
-                sendVimeoCommand("setVolume", 1);
-                setIsMuted(false);
-              }, 100);
-            }
-            hasUnmuted.current = true;
-          }
         }
         
         if (data.event === "pause") {
@@ -226,7 +212,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
+                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
                 title="Showreel video"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
