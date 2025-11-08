@@ -19,7 +19,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const handlePlay = () => {
     setIsPlaying(true);
     setIsPaused(false);
-    setIsMuted(true); // Start muted by default
+    setIsMuted(false); // Start with sound on
   };
 
   const sendCommand = (func: string, args: string = "") => {
@@ -65,8 +65,15 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           // Player ready
           if (parsedData.event === "onReady") {
             playerReady.current = true;
-            // Mute immediately when player is ready
-            sendCommand("mute");
+            // Don't mute on desktop for better UX
+            const isDesktop = window.innerWidth >= 768;
+            if (isDesktop) {
+              sendCommand("unMute");
+              setIsMuted(false);
+            } else {
+              sendCommand("mute");
+              setIsMuted(true);
+            }
           }
           
           // Video state changes: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
@@ -206,7 +213,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               <iframe
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full"
-                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
+                src={`https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&enablejsapi=1&loop=1&playlist=dQw4w9WgXcQ`}
                 title="Showreel video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -215,29 +222,29 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               {/* Overlay to prevent click-to-pause on desktop */}
               <div className="absolute inset-0 z-10 md:block hidden pointer-events-none" />
 
-              {/* Custom controls - bottom right (desktop only) */}
-              <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-20 hidden md:flex items-center gap-2 md:gap-3">
+              {/* Custom controls - bottom right with proper spacing */}
+              <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-20 hidden md:flex items-center gap-3">
                 <button
                   onClick={togglePlayPause}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110"
                   aria-label={isPaused ? "Play video" : "Pause video"}
                 >
                   {isPaused ? (
-                    <Play className="w-4 h-4 md:w-5 md:h-5 text-black ml-0.5" fill="currentColor" />
+                    <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
                   ) : (
-                    <Pause className="w-4 h-4 md:w-5 md:h-5 text-black" fill="currentColor" />
+                    <Pause className="w-5 h-5 text-black" fill="currentColor" />
                   )}
                 </button>
 
                 <button
                   onClick={toggleMute}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110"
+                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110"
                   aria-label={isMuted ? "Unmute video" : "Mute video"}
                 >
                   {isMuted ? (
-                    <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-black" />
+                    <VolumeX className="w-5 h-5 text-black" />
                   ) : (
-                    <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-black" />
+                    <Volume2 className="w-5 h-5 text-black" />
                   )}
                 </button>
               </div>
