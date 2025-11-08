@@ -7,19 +7,25 @@ const IntroVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scale, setScale] = useState(1);
   const sectionRef = useRef<HTMLElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const hasAutoplayedRef = useRef(false);
   const isMobile = useIsMobile();
 
   const handlePlay = () => {
-    setIsPlaying(true);
+    if (!hasAutoplayedRef.current) {
+      hasAutoplayedRef.current = true;
+      setIsPlaying(true);
+    }
   };
 
   // Autoplay on desktop only - run once
   useEffect(() => {
     if (!isMobile && !hasAutoplayedRef.current && !isPlaying) {
       const timer = setTimeout(() => {
-        hasAutoplayedRef.current = true;
-        setIsPlaying(true);
+        if (!hasAutoplayedRef.current) {
+          hasAutoplayedRef.current = true;
+          setIsPlaying(true);
+        }
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -88,8 +94,10 @@ const IntroVideo = () => {
           {/* Video player */}
           {isPlaying && (
             <iframe
+              ref={iframeRef}
+              key="video-iframe"
               className="absolute inset-0 h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&enablejsapi=1"
               title="Showreel video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
