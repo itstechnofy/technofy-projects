@@ -12,12 +12,13 @@ interface IntroVideoProps {
 const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [scale, setScale] = useState(0.85);
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
   const playerReady = useRef(false);
+  const hasUnmuted = useRef(false);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -71,19 +72,27 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         if (data.event === "ready") {
           playerReady.current = true;
           
-          // Always start muted to prevent double sound issue
-          sendVimeoCommand("setVolume", 0);
-          setIsMuted(true);
-          
           // Enable event listening
           sendVimeoCommand("addEventListener", "play");
           sendVimeoCommand("addEventListener", "pause");
           sendVimeoCommand("addEventListener", "ended");
         }
         
-        // Track play/pause state
+        // Track play state - unmute on first play for desktop
         if (data.event === "play") {
           setIsPaused(false);
+          
+          // Unmute on desktop after first play event to prevent double sound
+          if (!hasUnmuted.current) {
+            const isDesktop = window.innerWidth >= 768;
+            if (isDesktop) {
+              setTimeout(() => {
+                sendVimeoCommand("setVolume", 1);
+                setIsMuted(false);
+              }, 100);
+            }
+            hasUnmuted.current = true;
+          }
         }
         
         if (data.event === "pause") {
