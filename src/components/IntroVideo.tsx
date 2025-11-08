@@ -71,24 +71,14 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         if (data.event === "ready") {
           playerReady.current = true;
           
+          // Always start muted to prevent double sound issue
+          sendVimeoCommand("setVolume", 0);
+          setIsMuted(true);
+          
           // Enable event listening
           sendVimeoCommand("addEventListener", "play");
           sendVimeoCommand("addEventListener", "pause");
           sendVimeoCommand("addEventListener", "ended");
-          
-          // Start muted briefly, then unmute on desktop after player is fully ready
-          sendVimeoCommand("setVolume", 0);
-          
-          const isDesktop = window.innerWidth >= 768;
-          if (isDesktop) {
-            // Unmute after a brief delay to prevent double sound
-            setTimeout(() => {
-              sendVimeoCommand("setVolume", 1);
-              setIsMuted(false);
-            }, 300);
-          } else {
-            setIsMuted(true);
-          }
         }
         
         // Track play/pause state
