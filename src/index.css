@@ -83,4 +83,72 @@
   .delay-150 {
     animation-delay: 150ms;
   }
+
+  /* Ensure video controls are always interactive */
+  video::-webkit-media-controls {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-panel {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-play-button {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-volume-slider {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-mute-button {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-timeline {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-current-time-display {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-time-remaining-display {
+    pointer-events: auto !important;
+  }
+
+  video::-webkit-media-controls-fullscreen-button {
+    pointer-events: auto !important;
+  }
+
+  video {
+    pointer-events: auto !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  video * {
+    pointer-events: auto !important;
+  }
+
+  /* Force all video containers to allow interactions */
+  section video,
+  .grid video,
+  div video,
+  [class*="grid"] video {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  /* Ensure video wrapper doesn't block */
+  video[controls] {
+    pointer-events: auto !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  /* Force video controls to be interactive on all browsers */
+  video::-webkit-media-controls-enclosure {
+    pointer-events: auto !important;
+    -webkit-appearance: none !important;
+  }
 }

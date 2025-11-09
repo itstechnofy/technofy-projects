@@ -14,6 +14,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [scale, setScale] = useState(0.85);
+  const [vimeoUrl, setVimeoUrl] = useState<string>("");
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLIFrameElement>(null);
   const autoplayTriggered = useRef(false);
@@ -24,15 +25,16 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     setIsPlaying(true);
     setIsPaused(false);
     
-    // On mobile, unmute immediately since user clicked (user gesture allows sound)
-    const isMobile = window.innerWidth < 768;
+    // On mobile, reload iframe with unmuted parameter when user clicks (user gesture allows sound)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     if (isMobile) {
       setIsMuted(false);
-      // Will unmute via iframe parameter and then confirm via API
-      setTimeout(() => {
-        sendVimeoCommand("setVolume", 1);
-        hasUnmuted.current = true;
-      }, 500);
+      // Reload iframe with muted=0 for mobile to ensure sound works
+      setVimeoUrl(`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`);
+      hasUnmuted.current = true;
+    } else {
+      // Desktop: keep muted initially, will unmute after play starts
+      setVimeoUrl(`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`);
     }
   };
 
@@ -62,9 +64,15 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     e.stopPropagation();
     
     if (isMuted) {
+      // Unmute - set volume to 1
       sendVimeoCommand("setVolume", 1);
       setIsMuted(false);
+      hasUnmuted.current = true;
+      // Multiple attempts to ensure it works, especially on mobile
+      setTimeout(() => sendVimeoCommand("setVolume", 1), 100);
+      setTimeout(() => sendVimeoCommand("setVolume", 1), 300);
     } else {
+      // Mute - set volume to 0
       sendVimeoCommand("setVolume", 0);
       setIsMuted(true);
     }
@@ -86,23 +94,47 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           sendVimeoCommand("addEventListener", "play");
           sendVimeoCommand("addEventListener", "pause");
           sendVimeoCommand("addEventListener", "ended");
+          sendVimeoCommand("addEventListener", "volumechange");
+          
+          // On mobile, immediately set volume to 1 since user already clicked
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+          if (isMobile && !hasUnmuted.current) {
+            sendVimeoCommand("setVolume", 1);
+            setIsMuted(false);
+            hasUnmuted.current = true;
+          }
         }
         
-        // Track play state and unmute after video starts (desktop only)
+        // Track play state and unmute after video starts
         if (data.event === "play") {
           setIsPaused(false);
           
-          // Unmute after play starts on desktop to prevent double sound
-          // Mobile already unmuted on button click
+          // Unmute after play starts - ensure it works on both mobile and desktop
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
           if (!hasUnmuted.current) {
-            const isDesktop = window.innerWidth >= 768;
-            if (isDesktop) {
+            if (isMobile) {
+              // On mobile, unmute immediately since user gesture already happened
+              sendVimeoCommand("setVolume", 1);
+              setIsMuted(false);
+              hasUnmuted.current = true;
+            } else {
+              // Desktop: unmute after a short delay to prevent double sound
               setTimeout(() => {
                 sendVimeoCommand("setVolume", 1);
                 setIsMuted(false);
                 hasUnmuted.current = true;
               }, 300);
             }
+          } else if (isMobile) {
+            // Ensure volume is still at 1 on mobile
+            sendVimeoCommand("setVolume", 1);
+          }
+        }
+        
+        // Track volume changes to keep UI in sync
+        if (data.event === "volumechange") {
+          if (data.data && typeof data.data.volume === 'number') {
+            setIsMuted(data.data.volume === 0);
           }
         }
         
@@ -234,8 +266,9 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
             <div className="absolute inset-0 bg-black">
               <iframe
                 ref={videoRef}
+                key={vimeoUrl || `default-${VIMEO_VIDEO_ID}`}
                 className="absolute inset-0 h-full w-full"
-                src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
+                src={vimeoUrl || `https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`}
                 title="Showreel video"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
@@ -245,31 +278,31 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
               {/* Overlay to prevent direct video clicks on desktop */}
               <div className="absolute inset-0 z-10 md:block hidden pointer-events-auto" onClick={(e) => e.preventDefault()} />
 
-              {/* Custom controls - bottom right with proper spacing and click handling */}
-              <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-30 hidden md:flex items-center gap-3 pointer-events-auto">
+              {/* Custom controls - bottom right with proper spacing and click handling - visible on mobile too */}
+              <div className="absolute bottom-4 right-4 md:bottom-12 md:right-12 z-30 flex items-center gap-2 md:gap-3 pointer-events-auto">
                 <button
                   onClick={togglePlayPause}
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
                   aria-label={isPaused ? "Play video" : "Pause video"}
                   type="button"
                 >
                   {isPaused ? (
-                    <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
+                    <Play className="w-4 h-4 md:w-5 md:h-5 text-black ml-0.5" fill="currentColor" />
                   ) : (
-                    <Pause className="w-5 h-5 text-black" fill="currentColor" />
+                    <Pause className="w-4 h-4 md:w-5 md:h-5 text-black" fill="currentColor" />
                   )}
                 </button>
 
                 <button
                   onClick={toggleMute}
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/95 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-300 shadow-xl hover:scale-110 cursor-pointer"
                   aria-label={isMuted ? "Unmute video" : "Mute video"}
                   type="button"
                 >
                   {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-black" />
+                    <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-black" />
                   ) : (
-                    <Volume2 className="w-5 h-5 text-black" />
+                    <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-black" />
                   )}
                 </button>
               </div>

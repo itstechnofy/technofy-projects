@@ -5,16 +5,163 @@ import { Button } from "@/components/ui/button";
 import TopNavbar from "@/components/TopNavbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
+// VideoPlayer component - simplified to ensure native controls work
+const VideoPlayer = ({
+  src,
+  poster,
+  alt,
+  index,
+  onPlay,
+  registerRef,
+}: {
+  src: string;
+  poster: string;
+  alt: string;
+  index: number;
+  onPlay: () => void;
+  registerRef: (el: HTMLVideoElement | null) => void;
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Ensure video is unmuted
+    video.muted = false;
+    video.volume = 1;
+    video.controls = true;
+
+    // Aggressive fix: continuously ensure controls are accessible
+    const ensureControlsWork = () => {
+      // Remove any blocking styles
+      video.style.pointerEvents = 'auto';
+      video.style.touchAction = 'manipulation';
+      video.style.cursor = 'default';
+      
+      // Fix all parent elements
+      let parent: HTMLElement | null = video.parentElement;
+      while (parent && parent !== document.body) {
+        const computed = window.getComputedStyle(parent);
+        if (computed.pointerEvents === 'none') {
+          parent.style.setProperty('pointer-events', 'auto', 'important');
+        }
+        if (computed.touchAction === 'none') {
+          parent.style.setProperty('touch-action', 'manipulation', 'important');
+        }
+        parent = parent.parentElement;
+      }
+
+      // Try to access and fix shadow DOM controls (for webkit browsers)
+      try {
+        const shadowRoot = (video as any).webkitShadowRoot || (video as any).shadowRoot;
+        if (shadowRoot) {
+          const allInShadow = shadowRoot.querySelectorAll('*');
+          allInShadow.forEach((el: any) => {
+            if (el.style) {
+              el.style.pointerEvents = 'auto';
+              el.style.cursor = 'pointer';
+            }
+          });
+        }
+      } catch (e) {
+        // Shadow DOM not accessible
+      }
+    };
+
+    // Run immediately
+    ensureControlsWork();
+
+    // Run on all video events
+    const events = ['loadstart', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'play', 'playing'];
+    events.forEach(event => {
+      video.addEventListener(event, ensureControlsWork);
+    });
+
+    // Also run periodically to catch any dynamic changes
+    const interval = setInterval(ensureControlsWork, 500);
+
+    // Register the ref
+    registerRef(video);
+
+    return () => {
+      clearInterval(interval);
+      events.forEach(event => {
+        video.removeEventListener(event, ensureControlsWork);
+      });
+    };
+  }, [registerRef]);
+
+  const handlePlay = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    video.muted = false;
+    video.volume = 1;
+    onPlay();
+  };
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      poster={poster}
+      controls
+      controlsList="nodownload"
+      className="w-full h-64 rounded-lg shadow-md object-cover"
+      aria-label={alt}
+      playsInline
+      preload="metadata"
+      muted={false}
+      onPlay={handlePlay}
+      onLoadedMetadata={(e) => {
+        const video = e.currentTarget;
+        video.muted = false;
+        video.volume = 1;
+      }}
+      onCanPlay={(e) => {
+        const video = e.currentTarget;
+        video.muted = false;
+        video.volume = 1;
+      }}
+    />
+  );
+};
 
 const WorkDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const project = workProjects.find((p) => p.slug === slug);
+  const videoRefs = useRef<HTMLVideoElement[]>([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  useEffect(() => {
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+  }, [slug]);
+
+  const registerVideoRef = (index: number) => (element: HTMLVideoElement | null) => {
+    if (element) {
+      videoRefs.current[index] = element;
+    } else {
+      videoRefs.current.splice(index, 1);
+    }
+  };
+
+  const handleVideoPlay = (currentIndex: number) => () => {
+    videoRefs.current.forEach((video, index) => {
+      if (video && index !== currentIndex) {
+        video.pause();
+      }
+    });
+  };
 
   if (!project) {
     return (
@@ -110,14 +257,26 @@ const WorkDetail = () => {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Gallery</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {project.gallery.map((image, i) => (
-              <img
-                key={i}
-                src={image}
-                alt={`${project.title} gallery ${i + 1}`}
-                className="w-full h-64 object-cover rounded-lg shadow-md"
-              />
-            ))}
+            {project.gallery.map((item, i) =>
+              item.type === "image" ? (
+                <img
+                  key={i}
+                  src={item.src}
+                  alt={item.alt}
+                  className="w-full h-64 object-cover rounded-lg shadow-md"
+                />
+              ) : (
+                <VideoPlayer
+                  key={i}
+                  src={item.src}
+                  poster={item.poster}
+                  alt={item.alt}
+                  index={i}
+                  onPlay={handleVideoPlay(i)}
+                  registerRef={registerVideoRef(i)}
+                />
+              )
+            )}
           </div>
         </section>
 
