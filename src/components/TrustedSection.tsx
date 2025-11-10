@@ -134,10 +134,10 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set1-${index}`}
-                  className="shrink-0 text-center m-0 p-0 w-[200px] sm:w-[230px] lg:w-[260px]"
+                  className="shrink-0 text-center m-0 p-0 w-[180px] sm:w-[210px] lg:w-[240px]"
                 >
                   {/* Shadow wrapper */}
-                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[200px] sm:h-[230px] lg:h-[260px]">
+                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[180px] sm:h-[210px] lg:h-[240px]">
                     {/* White square - image only */}
                     <div 
                       className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"
@@ -179,10 +179,10 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set2-${index}`}
-                  className="shrink-0 text-center m-0 p-0 w-[200px] sm:w-[230px] lg:w-[260px]"
+                  className="shrink-0 text-center m-0 p-0 w-[180px] sm:w-[210px] lg:w-[240px]"
                 >
                   {/* Shadow wrapper */}
-                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[200px] sm:h-[230px] lg:h-[260px]">
+                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[180px] sm:h-[210px] lg:h-[240px]">
                     {/* White square - image only */}
                     <div 
                       className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"

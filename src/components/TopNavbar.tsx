@@ -23,7 +23,7 @@ const TopNavbar = ({ isHidden = false }: TopNavbarProps) => {
             <img
               src="/assets/logos/Logo.png"
               alt="Technofy"
-              className="h-24 md:h-28 lg:h-32 w-auto object-contain object-left"
+              className="h-32 md:h-32 lg:h-40 w-auto object-contain object-left"
               onError={(e) => {
                 const target = e.currentTarget;
                 if (target.nextElementSibling?.tagName !== "SPAN") {
