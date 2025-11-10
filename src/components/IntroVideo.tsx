@@ -31,8 +31,8 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     if (isMobile) {
       setIsMuted(false);
-      // Reload iframe with muted=0 for mobile to ensure sound works
-      setVimeoUrl(`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=0&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`);
+      // Reload iframe with muted=0 for mobile to ensure sound works, loop=0 to prevent auto-restart
+      setVimeoUrl(`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=0&autopause=0&muted=0&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`);
       hasUnmuted.current = true;
     } else {
       // Desktop: keep muted initially, will unmute after play starts
@@ -54,6 +54,13 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     e.stopPropagation();
     
     if (isPaused) {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      
+      // On mobile, if video ended, seek to start before playing
+      if (isMobile && playerReady.current) {
+        sendVimeoCommand("seekTo", 0);
+      }
+      
       sendVimeoCommand("play");
       setIsPaused(false);
     } else {
@@ -166,12 +173,22 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           setIsPaused(true);
         }
         
-        // Video ended - reset to poster
+        // Video ended - handle differently for mobile vs desktop
         if (data.event === "ended") {
-          setIsPlaying(false);
-          setIsPaused(false);
-          playerReady.current = false;
-          hasUnmuted.current = false;
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+          
+          if (isMobile) {
+            // On mobile: pause the video (keep it visible, don't reset)
+            setIsPaused(true);
+            // Don't reset isPlaying - keep video visible
+            // Don't reset playerReady - keep controls functional
+          } else {
+            // On desktop: reset to poster (autoplay will restart)
+            setIsPlaying(false);
+            setIsPaused(false);
+            playerReady.current = false;
+            hasUnmuted.current = false;
+          }
         }
       } catch (e) {
         // Ignore parse errors
