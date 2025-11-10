@@ -21,6 +21,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const playerReady = useRef(false);
   const hasUnmuted = useRef(false);
   const isPlayingRef = useRef(false);
+  const userPausedRef = useRef(false);
 
   const handlePlay = () => {
     isPlayingRef.current = true;
@@ -61,9 +62,11 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         sendVimeoCommand("seekTo", 0);
       }
       
+      userPausedRef.current = false; // User wants to play
       sendVimeoCommand("play");
       setIsPaused(false);
     } else {
+      userPausedRef.current = true; // User wants to pause
       sendVimeoCommand("pause");
       setIsPaused(true);
     }
@@ -128,6 +131,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         // Track play state and unmute after video starts
         if (data.event === "play") {
           setIsPaused(false);
+          userPausedRef.current = false; // Reset user pause flag when playing
           
           // Unmute after play starts - ensure it works on both mobile and desktop
           const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -161,15 +165,16 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         if (data.event === "pause") {
           const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
           
-          // On desktop with autoplay, ignore pause events and keep playing
-          if (isDesktop && autoplayTriggered.current) {
-            // Don't set paused state, and resume playback
+          // On desktop with autoplay, only ignore auto-pause events (not user-initiated)
+          if (isDesktop && autoplayTriggered.current && !userPausedRef.current) {
+            // This is an auto-pause event, resume playback
             setTimeout(() => {
               sendVimeoCommand("play");
             }, 50);
             return; // Don't update paused state
           }
           
+          // User-initiated pause or mobile - respect it
           setIsPaused(true);
         }
         
