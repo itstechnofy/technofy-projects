@@ -1,11 +1,11 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { workProjects } from "@/data/work";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopNavbar from "@/components/TopNavbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // VideoPlayer component - simplified to ensure native controls work
 const VideoPlayer = ({
@@ -24,18 +24,47 @@ const VideoPlayer = ({
   registerRef: (el: HTMLVideoElement | null) => void;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    // Reset error state when src changes
+    setHasError(false);
+    setIsLoading(true);
 
     // Ensure video is unmuted
     video.muted = false;
     video.volume = 1;
     video.controls = true;
 
+    // Error handler - prevent errors from breaking the page
+    const handleError = (e: Event) => {
+      console.warn('Video loading error:', e);
+      setHasError(true);
+      setIsLoading(false);
+      // Don't let the error propagate
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // Success handlers
+    const handleLoadedData = () => {
+      setIsLoading(false);
+      setHasError(false);
+    };
+
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setHasError(false);
+    };
+
     // Aggressive fix: continuously ensure controls are accessible
     const ensureControlsWork = () => {
+      if (hasError) return; // Don't try to fix controls if video has error
+      
       // Remove any blocking styles
       video.style.pointerEvents = 'auto';
       video.style.touchAction = 'manipulation';
@@ -74,10 +103,15 @@ const VideoPlayer = ({
     // Run immediately
     ensureControlsWork();
 
+    // Add error handlers
+    video.addEventListener('error', handleError, { passive: true });
+    video.addEventListener('loadeddata', handleLoadedData, { passive: true });
+    video.addEventListener('canplay', handleCanPlay, { passive: true });
+
     // Run on all video events
     const events = ['loadstart', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'play', 'playing'];
     events.forEach(event => {
-      video.addEventListener(event, ensureControlsWork);
+      video.addEventListener(event, ensureControlsWork, { passive: true });
     });
 
     // Also run periodically to catch any dynamic changes
@@ -88,11 +122,14 @@ const VideoPlayer = ({
 
     return () => {
       clearInterval(interval);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('canplay', handleCanPlay);
       events.forEach(event => {
         video.removeEventListener(event, ensureControlsWork);
       });
     };
-  }, [registerRef]);
+  }, [registerRef, hasError]);
 
   const handlePlay = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -101,30 +138,64 @@ const VideoPlayer = ({
     onPlay();
   };
 
+  // Show fallback if video fails to load
+  if (hasError) {
+    return (
+      <div className="w-full h-64 rounded-lg shadow-md bg-muted flex flex-col items-center justify-center gap-2 p-4">
+        <AlertCircle className="w-8 h-8 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground text-center">
+          Video unavailable
+        </p>
+        {poster && (
+          <img
+            src={poster}
+            alt={alt}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <video
-      ref={videoRef}
-      src={src}
-      poster={poster}
-      controls
-      controlsList="nodownload"
-      className="w-full h-64 rounded-lg shadow-md object-cover"
-      aria-label={alt}
-      playsInline
-      preload="metadata"
-      muted={false}
-      onPlay={handlePlay}
-      onLoadedMetadata={(e) => {
-        const video = e.currentTarget;
-        video.muted = false;
-        video.volume = 1;
-      }}
-      onCanPlay={(e) => {
-        const video = e.currentTarget;
-        video.muted = false;
-        video.volume = 1;
-      }}
-    />
+    <div className="relative w-full h-64 rounded-lg shadow-md overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
+          <div className="animate-pulse text-muted-foreground text-sm">Loading video...</div>
+        </div>
+      )}
+      <video
+        ref={videoRef}
+        src={src}
+        poster={poster}
+        controls
+        controlsList="nodownload"
+        className="w-full h-64 rounded-lg shadow-md object-cover"
+        aria-label={alt}
+        playsInline
+        preload="metadata"
+        muted={false}
+        onPlay={handlePlay}
+        onLoadedMetadata={(e) => {
+          const video = e.currentTarget;
+          video.muted = false;
+          video.volume = 1;
+          setIsLoading(false);
+        }}
+        onCanPlay={(e) => {
+          const video = e.currentTarget;
+          video.muted = false;
+          video.volume = 1;
+          setIsLoading(false);
+        }}
+        onError={(e) => {
+          // Additional error handling at React level
+          setHasError(true);
+          setIsLoading(false);
+          e.preventDefault();
+        }}
+      />
+    </div>
   );
 };
 
@@ -139,12 +210,23 @@ const WorkDetail = () => {
   }, [slug]);
 
   useEffect(() => {
-    videoRefs.current.forEach((video) => {
-      if (video) {
-        video.pause();
-        video.currentTime = 0;
-      }
-    });
+    // Safely pause and reset all videos when slug changes
+    try {
+      videoRefs.current.forEach((video) => {
+        if (video) {
+          try {
+            video.pause();
+            video.currentTime = 0;
+          } catch (error) {
+            // Silently handle video errors to prevent navigation issues
+            console.warn('Error resetting video:', error);
+          }
+        }
+      });
+    } catch (error) {
+      // Prevent any video-related errors from breaking navigation
+      console.warn('Error in video cleanup:', error);
+    }
   }, [slug]);
 
   const registerVideoRef = (index: number) => (element: HTMLVideoElement | null) => {
@@ -156,11 +238,21 @@ const WorkDetail = () => {
   };
 
   const handleVideoPlay = (currentIndex: number) => () => {
-    videoRefs.current.forEach((video, index) => {
-      if (video && index !== currentIndex) {
-        video.pause();
-      }
-    });
+    try {
+      videoRefs.current.forEach((video, index) => {
+        if (video && index !== currentIndex) {
+          try {
+            video.pause();
+          } catch (error) {
+            // Silently handle video errors
+            console.warn('Error pausing video:', error);
+          }
+        }
+      });
+    } catch (error) {
+      // Prevent video errors from breaking the page
+      console.warn('Error in video play handler:', error);
+    }
   };
 
   if (!project) {
