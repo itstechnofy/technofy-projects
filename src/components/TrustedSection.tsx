@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 const clients = [
   {
     name: "Toyota",
@@ -42,6 +44,75 @@ const clients = [
 ];
 
 const TrustedSection = () => {
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>();
+  const positionRef = useRef(0);
+  const setWidthRef = useRef(0);
+  
+  // Consistent gap classes for all containers
+  const gapClasses = "gap-0 sm:gap-2 md:gap-4 lg:gap-9";
+
+  useEffect(() => {
+    const marquee = marqueeRef.current;
+    if (!marquee) return;
+
+    // Wait for layout to calculate width properly
+    const initAnimation = () => {
+      const firstSet = marquee.firstElementChild as HTMLElement;
+      if (!firstSet || firstSet.offsetWidth === 0) {
+        requestAnimationFrame(initAnimation);
+        return;
+      }
+
+      // Calculate the exact width of one set including all items and internal gaps
+      // This ensures perfect alignment when looping
+      const firstSetWidth = firstSet.offsetWidth;
+      
+      // Get gap from computed style (handles responsive gaps)
+      const computedStyle = window.getComputedStyle(firstSet);
+      const gapValue = computedStyle.gap || '0px';
+      const gap = parseFloat(gapValue) || 0;
+      
+      // Total width = set width (which already includes internal gaps) + gap between sets
+      // This ensures seamless transition when the duplicate set takes over
+      setWidthRef.current = firstSetWidth + gap;
+
+      // Animation duration: 18 seconds for one set width (slower speed)
+      const duration = 18000; // 18 seconds in milliseconds
+      let startTime = performance.now();
+      let lastPosition = 0;
+
+      const animate = (currentTime: number) => {
+        if (!marquee) return;
+
+        let elapsed = currentTime - startTime;
+        
+        // Use modulo to create seamless loop without visible reset
+        const progress = (elapsed % duration) / duration;
+        
+        // Move by exactly one set width, seamlessly looping
+        positionRef.current = -progress * setWidthRef.current;
+
+        // Only update if position actually changed (prevents unnecessary repaints)
+        if (Math.abs(positionRef.current - lastPosition) > 0.1) {
+          marquee.style.transform = `translate3d(${positionRef.current}px, 0, 0)`;
+          lastPosition = positionRef.current;
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    initAnimation();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
   return (
     <section className="py-16 overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 text-center">
@@ -53,9 +124,13 @@ const TrustedSection = () => {
       <div className="mt-10 overflow-hidden">
         <div className="relative">
           {/* Marquee track */}
-          <div className="flex gap-9 animate-marquee will-change-transform [transform:translateZ(0)] [backface-visibility:hidden]">
+          <div 
+            ref={marqueeRef}
+            className={`flex ${gapClasses} will-change-transform [transform:translateZ(0)] [backface-visibility:hidden]`}
+            style={{ transform: 'translate3d(0, 0, 0)' }}
+          >
             {/* First set */}
-            <div className="flex gap-9">
+            <div className={`flex ${gapClasses} shrink-0`}>
               {clients.map((client, index) => (
                 <article
                   key={`set1-${index}`}
@@ -76,8 +151,7 @@ const TrustedSection = () => {
                     >
                       <img
                         src={client.logo}
-                        alt=""
-                        aria-hidden="true"
+                        alt={client.name}
                         className="block w-full h-full object-cover"
                         style={{
                           border: 'none',
@@ -101,7 +175,7 @@ const TrustedSection = () => {
             </div>
 
             {/* Duplicate set for seamless loop */}
-            <div aria-hidden="true" className="flex gap-9">
+            <div aria-hidden="true" className={`flex ${gapClasses} shrink-0`}>
               {clients.map((client, index) => (
                 <article
                   key={`set2-${index}`}
@@ -145,30 +219,11 @@ const TrustedSection = () => {
                 </article>
               ))}
             </div>
+
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes marquee {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(-50%);
-          }
-        }
-
-        .animate-marquee {
-          animation: marquee 14s linear infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .animate-marquee {
-            animation-play-state: paused;
-          }
-        }
-      `}</style>
     </section>
   );
 };
