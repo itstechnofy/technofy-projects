@@ -49,8 +49,8 @@ const TrustedSection = () => {
   const positionRef = useRef(0);
   const setWidthRef = useRef(0);
   
-  // Consistent gap classes for all containers
-  const gapClasses = "gap-0 sm:gap-2 md:gap-4 lg:gap-9";
+  // Consistent gap classes for all containers - same gap on all screen sizes
+  const gapClasses = "gap-4 sm:gap-4 md:gap-4 lg:gap-4";
 
   useEffect(() => {
     const marquee = marqueeRef.current;
@@ -77,8 +77,8 @@ const TrustedSection = () => {
       // This ensures seamless transition when the duplicate set takes over
       setWidthRef.current = firstSetWidth + gap;
 
-      // Animation duration: 18 seconds for one set width (slower speed)
-      const duration = 18000; // 18 seconds in milliseconds
+      // Animation duration: 45 seconds for one set width (very slow speed)
+      const duration = 45000; // 45 seconds in milliseconds (very slow)
       let startTime = performance.now();
       let lastPosition = 0;
 
@@ -134,10 +134,10 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set1-${index}`}
-                  className="shrink-0 text-center"
+                  className="shrink-0 text-center m-0 p-0 w-[200px] sm:w-[230px] lg:w-[260px]"
                 >
                   {/* Shadow wrapper */}
-                  <div className="mx-auto filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[200px] sm:h-[230px] lg:h-[260px]">
                     {/* White square - image only */}
                     <div 
                       className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"
@@ -179,10 +179,10 @@ const TrustedSection = () => {
               {clients.map((client, index) => (
                 <article
                   key={`set2-${index}`}
-                  className="shrink-0 text-center"
+                  className="shrink-0 text-center m-0 p-0 w-[200px] sm:w-[230px] lg:w-[260px]"
                 >
                   {/* Shadow wrapper */}
-                  <div className="mx-auto filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-[200px] h-[200px] sm:w-[230px] sm:h-[230px] lg:w-[260px] lg:h-[260px]">
+                  <div className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] w-full h-[200px] sm:h-[230px] lg:h-[260px]">
                     {/* White square - image only */}
                     <div 
                       className="bg-white dark:bg-white overflow-hidden rounded-[24px] w-full h-full flex items-center justify-center"
