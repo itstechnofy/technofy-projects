@@ -25,7 +25,7 @@ const VideoPlayer = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false - show video immediately
 
   useEffect(() => {
     const video = videoRef.current;
@@ -33,7 +33,7 @@ const VideoPlayer = ({
 
     // Reset error state when src changes
     setHasError(false);
-    setIsLoading(true);
+    setIsLoading(false); // Don't show loading initially - let poster show
 
     // Ensure video is unmuted
     video.muted = false;
@@ -50,7 +50,7 @@ const VideoPlayer = ({
       e.stopPropagation();
     };
 
-    // Success handlers
+    // Success handlers - video is ready
     const handleLoadedData = () => {
       setIsLoading(false);
       setHasError(false);
@@ -59,6 +59,11 @@ const VideoPlayer = ({
     const handleCanPlay = () => {
       setIsLoading(false);
       setHasError(false);
+    };
+
+    // Show loading only when video actually starts loading
+    const handleLoadStart = () => {
+      setIsLoading(true);
     };
 
     // Aggressive fix: continuously ensure controls are accessible
@@ -107,6 +112,7 @@ const VideoPlayer = ({
     video.addEventListener('error', handleError, { passive: true });
     video.addEventListener('loadeddata', handleLoadedData, { passive: true });
     video.addEventListener('canplay', handleCanPlay, { passive: true });
+    video.addEventListener('loadstart', handleLoadStart, { passive: true });
 
     // Run on all video events
     const events = ['loadstart', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'play', 'playing'];
@@ -125,11 +131,12 @@ const VideoPlayer = ({
       video.removeEventListener('error', handleError);
       video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadstart', handleLoadStart);
       events.forEach(event => {
         video.removeEventListener(event, ensureControlsWork);
       });
     };
-  }, [registerRef, hasError]);
+  }, [registerRef, hasError, src]);
 
   const handlePlay = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -158,12 +165,7 @@ const VideoPlayer = ({
   }
 
   return (
-    <div className="relative w-full h-64 rounded-lg shadow-md overflow-hidden">
-      {isLoading && (
-        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
-          <div className="animate-pulse text-muted-foreground text-sm">Loading video...</div>
-        </div>
-      )}
+    <div className="relative w-full h-64 rounded-lg shadow-md overflow-hidden bg-muted">
       <video
         ref={videoRef}
         src={src}
@@ -194,7 +196,20 @@ const VideoPlayer = ({
           setIsLoading(false);
           e.preventDefault();
         }}
+        onLoadStart={() => {
+          setIsLoading(true);
+        }}
       />
+      {isLoading && (
+        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+          <div className="bg-background/90 px-3 py-1.5 rounded-lg shadow-lg border border-border">
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent"></div>
+              <span className="text-xs text-foreground">Loading...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
