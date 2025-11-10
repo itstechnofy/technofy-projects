@@ -22,6 +22,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const hasUnmuted = useRef(false);
   const isPlayingRef = useRef(false);
   const userPausedRef = useRef(false);
+  const videoEndedRef = useRef(false);
 
   const handlePlay = () => {
     isPlayingRef.current = true;
@@ -57,9 +58,10 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     if (isPaused) {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
       
-      // On mobile, if video ended, seek to start before playing
-      if (isMobile && playerReady.current) {
+      // On mobile, if video ended (not just paused), seek to start before playing
+      if (isMobile && videoEndedRef.current && playerReady.current) {
         sendVimeoCommand("seekTo", 0);
+        videoEndedRef.current = false; // Reset the ended flag
       }
       
       userPausedRef.current = false; // User wants to play
@@ -132,6 +134,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         if (data.event === "play") {
           setIsPaused(false);
           userPausedRef.current = false; // Reset user pause flag when playing
+          videoEndedRef.current = false; // Reset ended flag when playing
           
           // Unmute after play starts - ensure it works on both mobile and desktop
           const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -185,6 +188,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           if (isMobile) {
             // On mobile: pause the video (keep it visible, don't reset)
             setIsPaused(true);
+            videoEndedRef.current = true; // Mark that video has ended
             // Don't reset isPlaying - keep video visible
             // Don't reset playerReady - keep controls functional
           } else {
@@ -193,6 +197,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
             setIsPaused(false);
             playerReady.current = false;
             hasUnmuted.current = false;
+            videoEndedRef.current = false;
           }
         }
       } catch (e) {
