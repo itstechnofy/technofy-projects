@@ -35,10 +35,38 @@ const VideoPlayer = ({
     setHasError(false);
     setIsLoading(false); // Don't show loading initially - let poster show
 
+    // Check if desktop view
+    const isDesktop = window.innerWidth >= 768;
+
     // Ensure video is unmuted
     video.muted = false;
     video.volume = 1;
     video.controls = true;
+
+    // Autoplay on desktop
+    let autoplayHandler: (() => void) | null = null;
+    if (isDesktop) {
+      const tryAutoplay = async () => {
+        try {
+          await video.play();
+        } catch (error) {
+          // Autoplay may be blocked by browser policy, that's okay
+          console.log('Autoplay prevented by browser policy');
+        }
+      };
+      
+      // Try autoplay when video can play
+      autoplayHandler = () => {
+        tryAutoplay();
+      };
+      
+      video.addEventListener('canplay', autoplayHandler, { once: true });
+      
+      // Also try if video is already ready
+      if (video.readyState >= 3) {
+        tryAutoplay();
+      }
+    }
 
     // Error handler - prevent errors from breaking the page
     const handleError = (e: Event) => {
@@ -132,6 +160,9 @@ const VideoPlayer = ({
       video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('loadstart', handleLoadStart);
+      if (autoplayHandler) {
+        video.removeEventListener('canplay', autoplayHandler);
+      }
       events.forEach(event => {
         video.removeEventListener(event, ensureControlsWork);
       });

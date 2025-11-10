@@ -20,8 +20,10 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
   const autoplayTriggered = useRef(false);
   const playerReady = useRef(false);
   const hasUnmuted = useRef(false);
+  const isPlayingRef = useRef(false);
 
   const handlePlay = () => {
+    isPlayingRef.current = true;
     setIsPlaying(true);
     setIsPaused(false);
     
@@ -96,6 +98,17 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
           sendVimeoCommand("addEventListener", "ended");
           sendVimeoCommand("addEventListener", "volumechange");
           
+          // On desktop, ensure video plays automatically
+          const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+          if (isDesktop && isPlayingRef.current) {
+            // Send play command multiple times to ensure autoplay works
+            sendVimeoCommand("play");
+            setTimeout(() => sendVimeoCommand("play"), 100);
+            setTimeout(() => sendVimeoCommand("play"), 300);
+            // Ensure it's not paused
+            setIsPaused(false);
+          }
+          
           // On mobile, immediately set volume to 1 since user already clicked
           const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
           if (isMobile && !hasUnmuted.current) {
@@ -139,6 +152,17 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
         }
         
         if (data.event === "pause") {
+          const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+          
+          // On desktop with autoplay, ignore pause events and keep playing
+          if (isDesktop && autoplayTriggered.current) {
+            // Don't set paused state, and resume playback
+            setTimeout(() => {
+              sendVimeoCommand("play");
+            }, 50);
+            return; // Don't update paused state
+          }
+          
           setIsPaused(true);
         }
         
@@ -158,21 +182,21 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  // Smooth autoplay on desktop after initial load
+  // Autoplay on desktop - start immediately
   useEffect(() => {
     if (autoplayTriggered.current) return;
     
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) return;
 
-    const autoplayTimer = setTimeout(() => {
-      autoplayTriggered.current = true;
-      setIsPlaying(true);
-    }, 1500);
-
-    return () => {
-      clearTimeout(autoplayTimer);
-    };
+    // Set the Vimeo URL with autoplay for desktop
+    const desktopUrl = `https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?autoplay=1&loop=1&autopause=0&muted=1&controls=0&title=0&byline=0&portrait=0&sidedock=0&background=0&api=1`;
+    setVimeoUrl(desktopUrl);
+    
+    // Start playing immediately on desktop
+    isPlayingRef.current = true;
+    setIsPlaying(true);
+    autoplayTriggered.current = true;
   }, []);
 
   // Scroll-based expansion effect
