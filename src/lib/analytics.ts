@@ -23,12 +23,14 @@ function getUTMParams(): { utm_source?: string; utm_medium?: string; utm_campaig
   };
 }
 
-// Track page visit (silently fails if edge function not deployed)
-let analyticsEnabled = true;
+// Track page visit - Disabled by default until edge function is deployed
+// Set VITE_ENABLE_ANALYTICS=true in environment variables to enable
+let analyticsEnabled = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+let hasFailed = false;
 
 export async function trackPageVisit() {
-  // Skip if analytics was disabled due to previous failures
-  if (!analyticsEnabled) return;
+  // Skip if analytics is disabled or has previously failed
+  if (!analyticsEnabled || hasFailed) return;
   
   try {
     const utmParams = getUTMParams();
@@ -43,15 +45,10 @@ export async function trackPageVisit() {
       },
     });
   } catch (error: any) {
-    // Disable analytics if function doesn't exist (404) or CORS error
-    if (error?.message?.includes('CORS') || error?.status === 404 || error?.code === 'ERR_FAILED') {
-      analyticsEnabled = false;
-      // Only log in development
-      if (import.meta.env.DEV) {
-        console.debug('Analytics tracking disabled (edge function not deployed)');
-      }
-    }
-    // Silently ignore other errors
+    // Disable analytics on any error (function not deployed, CORS, etc.)
+    hasFailed = true;
+    analyticsEnabled = false;
+    // Silently fail - no console errors
   }
 }
 
@@ -59,13 +56,16 @@ export async function trackPageVisit() {
 let navigationObserver: ReturnType<typeof setInterval> | null = null;
 
 export function initAnalytics() {
+  // Only initialize if analytics is enabled
+  if (!analyticsEnabled) return;
+  
   // Track initial page visit
   trackPageVisit();
 
   // Track subsequent navigation (for SPAs)
   let lastPath = window.location.pathname;
   navigationObserver = setInterval(() => {
-    if (!analyticsEnabled) {
+    if (!analyticsEnabled || hasFailed) {
       // Stop tracking if disabled
       if (navigationObserver) {
         clearInterval(navigationObserver);
