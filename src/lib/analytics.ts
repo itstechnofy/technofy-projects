@@ -23,8 +23,13 @@ function getUTMParams(): { utm_source?: string; utm_medium?: string; utm_campaig
   };
 }
 
-// Track page visit
+// Track page visit (silently fails if edge function not deployed)
+let analyticsEnabled = true;
+
 export async function trackPageVisit() {
+  // Skip if analytics was disabled due to previous failures
+  if (!analyticsEnabled) return;
+  
   try {
     const utmParams = getUTMParams();
     
@@ -37,19 +42,38 @@ export async function trackPageVisit() {
         ...utmParams,
       },
     });
-  } catch (error) {
-    console.error('Failed to track visit:', error);
+  } catch (error: any) {
+    // Disable analytics if function doesn't exist (404) or CORS error
+    if (error?.message?.includes('CORS') || error?.status === 404 || error?.code === 'ERR_FAILED') {
+      analyticsEnabled = false;
+      // Only log in development
+      if (import.meta.env.DEV) {
+        console.debug('Analytics tracking disabled (edge function not deployed)');
+      }
+    }
+    // Silently ignore other errors
   }
 }
 
 // Initialize tracking on page load
+let navigationObserver: ReturnType<typeof setInterval> | null = null;
+
 export function initAnalytics() {
   // Track initial page visit
   trackPageVisit();
 
   // Track subsequent navigation (for SPAs)
   let lastPath = window.location.pathname;
-  const observer = setInterval(() => {
+  navigationObserver = setInterval(() => {
+    if (!analyticsEnabled) {
+      // Stop tracking if disabled
+      if (navigationObserver) {
+        clearInterval(navigationObserver);
+        navigationObserver = null;
+      }
+      return;
+    }
+    
     if (window.location.pathname !== lastPath) {
       lastPath = window.location.pathname;
       trackPageVisit();
@@ -58,6 +82,8 @@ export function initAnalytics() {
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
-    clearInterval(observer);
+    if (navigationObserver) {
+      clearInterval(navigationObserver);
+    }
   });
 }
