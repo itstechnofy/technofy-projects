@@ -1,3 +1,11 @@
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+  serve(handler: (req: Request) => Promise<Response> | Response): void;
+};
+
+// @ts-ignore - Deno URL import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
 
 const corsHeaders = {
@@ -107,7 +115,7 @@ Deno.serve(async (req) => {
     const ipHash = await hashIP(ip, userAgent);
 
     // Extract domain from referrer
-    let referrerDomain = null;
+    let referrerDomain: string | null = null;
     if (body.referrer) {
       try {
         const url = new URL(body.referrer);

@@ -193,10 +193,10 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
             // Don't reset playerReady - keep controls functional
           } else {
             // On desktop: reset to poster (autoplay will restart)
-            setIsPlaying(false);
-            setIsPaused(false);
-            playerReady.current = false;
-            hasUnmuted.current = false;
+          setIsPlaying(false);
+          setIsPaused(false);
+          playerReady.current = false;
+          hasUnmuted.current = false;
             videoEndedRef.current = false;
           }
         }
@@ -223,7 +223,7 @@ const IntroVideo = ({ onVideoFocus }: IntroVideoProps) => {
     // Start playing immediately on desktop
     isPlayingRef.current = true;
     setIsPlaying(true);
-    autoplayTriggered.current = true;
+      autoplayTriggered.current = true;
   }, []);
 
   // Scroll-based expansion effect
