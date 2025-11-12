@@ -14,7 +14,9 @@ if (typeof window !== 'undefined') {
     console.error('Please set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your Vercel environment variables.');
   } else {
     console.log('✅ Supabase environment variables loaded successfully');
-    console.log('Supabase URL:', SUPABASE_URL.substring(0, 30) + '...');
+    console.log('Full Supabase URL:', SUPABASE_URL);
+    console.log('URL contains wzagyfqpktbhlqpebufw:', SUPABASE_URL.includes('wzagyfqpktbhlqpebufw') ? '✅ YES' : '❌ NO');
+    console.log('URL contains krjjvzxezjuiuulimlfh:', SUPABASE_URL.includes('krjjvzxezjuiuulimlfh') ? '❌ OLD URL DETECTED!' : '✅ NO');
   }
 }
 
