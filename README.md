@@ -2,6 +2,8 @@
 
 ## Project info
 
+<!-- Updated: Admin panel configured for Vercel deployment -->
+
 **URL**: https://lovable.dev/projects/dfef5e28-562d-4ad1-b6f6-7b7b7983b5a4
 
 ## 🚀 Quick Start - Run Locally
