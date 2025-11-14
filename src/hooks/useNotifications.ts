@@ -164,7 +164,7 @@ export const useNotifications = () => {
       }
     }
 
-    if (Notification.permission === "granted") {
+      if (Notification.permission === "granted") {
       try {
         new Notification(title, {
           body: message,
