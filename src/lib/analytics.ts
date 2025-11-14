@@ -23,19 +23,21 @@ function getUTMParams(): { utm_source?: string; utm_medium?: string; utm_campaig
   };
 }
 
-// Track page visit - Disabled by default until edge function is deployed
-// Set VITE_ENABLE_ANALYTICS=true in environment variables to enable
-let analyticsEnabled = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+// Track page visit - Enabled by default
+// Set VITE_ENABLE_ANALYTICS=false to disable
+let analyticsEnabled = import.meta.env.VITE_ENABLE_ANALYTICS !== 'false';
 let hasFailed = false;
+let failureCount = 0;
+const MAX_FAILURES = 3; // Stop trying after 3 consecutive failures
 
 export async function trackPageVisit() {
-  // Skip if analytics is disabled or has previously failed
-  if (!analyticsEnabled || hasFailed) return;
+  // Skip if analytics is disabled or has failed too many times
+  if (!analyticsEnabled || (hasFailed && failureCount >= MAX_FAILURES)) return;
   
   try {
     const utmParams = getUTMParams();
     
-    await supabase.functions.invoke('track-visit', {
+    const { error } = await supabase.functions.invoke('track-visit', {
       body: {
         path: window.location.pathname,
         referrer: document.referrer || undefined,
@@ -44,11 +46,25 @@ export async function trackPageVisit() {
         ...utmParams,
       },
     });
+
+    if (error) {
+      failureCount++;
+      if (failureCount >= MAX_FAILURES) {
+        hasFailed = true;
+        console.warn('Analytics tracking disabled after multiple failures. Edge function may not be deployed.');
+      }
+      return;
+    }
+
+    // Reset failure count on success
+    failureCount = 0;
+    hasFailed = false;
   } catch (error: any) {
-    // Disable analytics on any error (function not deployed, CORS, etc.)
-    hasFailed = true;
-    analyticsEnabled = false;
-    // Silently fail - no console errors
+    failureCount++;
+    if (failureCount >= MAX_FAILURES) {
+      hasFailed = true;
+      console.warn('Analytics tracking disabled after multiple failures:', error.message);
+    }
   }
 }
 

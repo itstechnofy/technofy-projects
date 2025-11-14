@@ -105,7 +105,13 @@ const AnalyticsTab = () => {
   };
 
   const getKPIs = () => {
-    const uniqueVisitors = new Set(visits.map(v => v.ip_hash)).size;
+    // Count unique visitors by ip_hash (excluding null/undefined)
+    const uniqueVisitorHashes = new Set(
+      visits
+        .map(v => v.ip_hash)
+        .filter(hash => hash && hash.trim() !== '')
+    );
+    const uniqueVisitors = uniqueVisitorHashes.size;
     const totalLeads = leads.length;
     const conversionRate = uniqueVisitors > 0 ? ((totalLeads / uniqueVisitors) * 100).toFixed(2) : "0.00";
 
@@ -278,14 +284,22 @@ const AnalyticsTab = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {breakdowns.countryBreakdown.map((item, idx) => (
-                <tr key={idx} className="border-b last:border-0">
-                  <td className="py-2 text-gray-900">{item.country}</td>
-                  <td className="py-2 text-gray-700">{item.visitors}</td>
-                  <td className="py-2 text-gray-700">{item.leads}</td>
-                  <td className="py-2 text-gray-700">{item.conversion}%</td>
+              {breakdowns.countryBreakdown.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-gray-500">
+                    No data available
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                breakdowns.countryBreakdown.map((item, idx) => (
+                  <tr key={idx} className="border-b last:border-0">
+                    <td className="py-2 text-gray-900">{item.country}</td>
+                    <td className="py-2 text-gray-700">{item.visitors}</td>
+                    <td className="py-2 text-gray-700">{item.leads}</td>
+                    <td className="py-2 text-gray-700">{item.conversion}%</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -301,12 +315,20 @@ const AnalyticsTab = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {breakdowns.deviceBreakdown.map((item, idx) => (
-                <tr key={idx} className="border-b last:border-0">
-                  <td className="py-2 text-gray-900 capitalize">{item.device}</td>
-                  <td className="py-2 text-gray-700">{item.visitors}</td>
+              {breakdowns.deviceBreakdown.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="py-4 text-center text-gray-500">
+                    No data available
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                breakdowns.deviceBreakdown.map((item, idx) => (
+                  <tr key={idx} className="border-b last:border-0">
+                    <td className="py-2 text-gray-900 capitalize">{item.device}</td>
+                    <td className="py-2 text-gray-700">{item.visitors}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -322,12 +344,20 @@ const AnalyticsTab = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {breakdowns.referrerBreakdown.map((item, idx) => (
-                <tr key={idx} className="border-b last:border-0">
-                  <td className="py-2 text-gray-900">{item.referrer}</td>
-                  <td className="py-2 text-gray-700">{item.visitors}</td>
+              {breakdowns.referrerBreakdown.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="py-4 text-center text-gray-500">
+                    No data available
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                breakdowns.referrerBreakdown.map((item, idx) => (
+                  <tr key={idx} className="border-b last:border-0">
+                    <td className="py-2 text-gray-900">{item.referrer}</td>
+                    <td className="py-2 text-gray-700">{item.visitors}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -343,12 +373,20 @@ const AnalyticsTab = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {breakdowns.contactMethodBreakdown.map((item, idx) => (
-                <tr key={idx} className="border-b last:border-0">
-                  <td className="py-2 text-gray-900 capitalize">{item.method}</td>
-                  <td className="py-2 text-gray-700">{item.count}</td>
+              {breakdowns.contactMethodBreakdown.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="py-4 text-center text-gray-500">
+                    No data available
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                breakdowns.contactMethodBreakdown.map((item, idx) => (
+                  <tr key={idx} className="border-b last:border-0">
+                    <td className="py-2 text-gray-900 capitalize">{item.method}</td>
+                    <td className="py-2 text-gray-700">{item.count}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

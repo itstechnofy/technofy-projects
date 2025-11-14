@@ -27,6 +27,7 @@ export interface NotificationSettings {
 
 // Create a simple notification beep using Web Audio API
 let audioContext: AudioContext | null = null;
+let audioContextInitialized = false;
 
 const getAudioContext = () => {
   if (!audioContext && typeof window !== 'undefined') {
@@ -39,6 +40,25 @@ const getAudioContext = () => {
   return audioContext;
 };
 
+// Initialize audio context with user interaction
+const initializeAudioContext = async () => {
+  if (audioContextInitialized) return;
+  
+  const context = getAudioContext();
+  if (!context) return;
+  
+  try {
+    // Resume context if suspended (required for autoplay policy)
+    if (context.state === 'suspended') {
+      await context.resume();
+    }
+    audioContextInitialized = true;
+    console.log('Audio context initialized');
+  } catch (e) {
+    console.error('Failed to initialize audio context:', e);
+  }
+};
+
 const playNotificationBeep = async () => {
   try {
     const context = getAudioContext();
@@ -47,9 +67,15 @@ const playNotificationBeep = async () => {
       return;
     }
 
-    // Resume context if suspended (required for autoplay policy)
+    // Ensure context is initialized and resumed
+    if (!audioContextInitialized || context.state === 'suspended') {
+      await initializeAudioContext();
+    }
+
+    // Double-check state after initialization
     if (context.state === 'suspended') {
-      await context.resume();
+      console.log('Audio context still suspended, cannot play sound');
+      return;
     }
 
     const oscillator = context.createOscillator();
@@ -124,19 +150,37 @@ export const useNotifications = () => {
   };
 
   // Show desktop notification
-  const showDesktopNotification = (title: string, message: string) => {
-    if (settings.desktop_push && !isInDNDMode() && "Notification" in window) {
-      if (Notification.permission === "granted") {
+  const showDesktopNotification = async (title: string, message: string) => {
+    if (!settings.desktop_push || isInDNDMode() || !("Notification" in window)) {
+      return;
+    }
+
+    // Check permission and request if needed
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log('Desktop notification permission denied');
+        return;
+      }
+    }
+
+    if (Notification.permission === "granted") {
+      try {
         new Notification(title, {
           body: message,
           icon: "/favicon.ico",
+          badge: "/favicon.ico",
+          tag: "admin-notification",
+          requireInteraction: false,
         });
+      } catch (e) {
+        console.error('Failed to show desktop notification:', e);
       }
     }
   };
 
   // Show toast notification
-  const showToast = (notification: Notification) => {
+  const showToast = async (notification: Notification) => {
     if (isInDNDMode()) return;
 
     const typeConfig = {
@@ -154,8 +198,9 @@ export const useNotifications = () => {
       duration: 4000,
     });
 
+    // Play sound and show desktop notification asynchronously
     playSound();
-    showDesktopNotification(notification.title, notification.message);
+    await showDesktopNotification(notification.title, notification.message);
   };
 
   // Fetch notifications
@@ -290,6 +335,28 @@ export const useNotifications = () => {
       setLoading(true);
       await fetchSettings();
       await fetchNotifications();
+      
+      // Initialize audio context on component mount (user has interacted with page)
+      if (typeof window !== 'undefined') {
+        // Initialize audio context when user interacts with the page
+        const initAudio = async () => {
+          await initializeAudioContext();
+        };
+        
+        // Try to initialize on any user interaction
+        const events = ['click', 'touchstart', 'keydown'];
+        const initOnce = () => {
+          initAudio();
+          events.forEach(e => document.removeEventListener(e, initOnce));
+        };
+        events.forEach(e => document.addEventListener(e, initOnce, { once: true }));
+        
+        // Also try immediately if page is already interactive
+        if (document.readyState === 'complete') {
+          initAudio();
+        }
+      }
+      
       setLoading(false);
     };
 

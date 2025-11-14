@@ -15,16 +15,34 @@ export const createNotification = async ({
   message,
   meta = {},
 }: CreateNotificationParams) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  const { error } = await supabase.from("admin_notifications").insert({
+  // Use the security definer function to get all admin user IDs
+  // This bypasses RLS restrictions
+  const { data: adminUsers, error: adminError } = await supabase
+    .rpc("get_admin_user_ids" as any);
+
+  if (adminError) {
+    console.error("Error fetching admin users:", adminError);
+    return;
+  }
+
+  if (!adminUsers || !Array.isArray(adminUsers) || adminUsers.length === 0) {
+    console.log("No admin users found");
+    return;
+  }
+
+  // Create notifications for all admin users
+  const notifications = adminUsers.map((admin: { user_id: string }) => ({
     type,
     title,
     message,
     meta,
-    user_id: user?.id,
+    user_id: admin.user_id,
     read: false,
-  });
+  }));
+
+  const { error } = await supabase
+    .from("admin_notifications")
+    .insert(notifications);
 
   if (error) {
     console.error("Error creating notification:", error);

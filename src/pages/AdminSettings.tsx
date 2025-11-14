@@ -38,9 +38,15 @@ const AdminSettings = () => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      // Resume if suspended
+      // Resume if suspended (required for autoplay policy)
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
+      }
+      
+      // Wait a bit to ensure context is ready
+      if (audioContext.state === 'suspended') {
+        toast.error("Audio context is suspended. Please interact with the page first.");
+        return;
       }
       
       const oscillator = audioContext.createOscillator();
