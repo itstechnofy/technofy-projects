@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MessageCircle, Send, Phone as PhoneIcon, Mail, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, contactSchema } from "@/lib/dataService";
 import { getUserLocation } from "@/lib/locationService";
@@ -66,7 +66,24 @@ const ContactSection = () => {
   const [source, setSource] = useState("");
   const [copied, setCopied] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+  const [userLocation, setUserLocation] = useState<{ country: string | null; region: string | null; city: string | null } | null>(null);
   const { toast } = useToast();
+
+  // Pre-fetch location when component mounts
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        console.log('📍 Pre-fetching user location...');
+        const location = await getUserLocation();
+        setUserLocation(location);
+        console.log('✅ Location pre-fetched:', location);
+      } catch (error) {
+        console.error('❌ Failed to pre-fetch location:', error);
+      }
+    };
+    
+    fetchLocation();
+  }, []);
 
   const channels = [
     { id: "whatsapp" as Channel, label: "WhatsApp", icon: MessageCircle },
@@ -131,38 +148,22 @@ const ContactSection = () => {
 
       // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
       if (selectedChannel !== "phone") {
-        // Get user's location (country, region, city) via IP geolocation
-        console.log('📍 Starting location fetch...');
-        let location = { country: null, region: null, city: null };
+        // Use pre-fetched location or fetch now if not available
+        let location = userLocation || { country: null, region: null, city: null };
         
-        try {
-          location = await getUserLocation();
-          console.log('✅ Location received:', location);
-          
-          // Verify location data
-          if (!location.country && !location.city) {
-            console.warn('⚠️ Location API returned empty data. Trying alternative method...');
-            // Try direct API call as fallback
-            try {
-              const directResponse = await fetch('https://ipapi.co/json/', {
-                headers: { 'Accept': 'application/json' }
-              });
-              if (directResponse.ok) {
-                const directData = await directResponse.json();
-                location = {
-                  country: directData.country_name || null,
-                  region: directData.region || null,
-                  city: directData.city || null,
-                };
-                console.log('✅ Fallback location received:', location);
-              }
-            } catch (fallbackError) {
-              console.error('❌ Fallback location failed:', fallbackError);
-            }
+        // If we don't have location yet, try to fetch it now
+        if (!location.country && !location.city) {
+          console.log('📍 Location not pre-fetched, fetching now...');
+          try {
+            location = await getUserLocation();
+            setUserLocation(location); // Cache it for future use
+            console.log('✅ Location fetched during submission:', location);
+          } catch (error) {
+            console.error('❌ Failed to get location during submission:', error);
+            // Continue with empty location if fetch fails
           }
-        } catch (error) {
-          console.error('❌ Failed to get location:', error);
-          // Continue without location if API fails
+        } else {
+          console.log('✅ Using pre-fetched location:', location);
         }
 
         const leadData = {

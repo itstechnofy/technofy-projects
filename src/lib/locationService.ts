@@ -1,4 +1,5 @@
 // Location service to get user's country and city via IP geolocation
+// Uses multiple fallback APIs for maximum reliability
 
 interface GeoLocation {
   country: string | null;
@@ -12,11 +13,12 @@ let locationPromise: Promise<GeoLocation> | null = null;
 
 /**
  * Get user's location using IP-based geolocation
- * Uses ipapi.co free API (1000 requests/day)
+ * Uses multiple fallback APIs for maximum reliability
  */
 export async function getUserLocation(): Promise<GeoLocation> {
   // Return cached location if available
-  if (cachedLocation) {
+  if (cachedLocation && cachedLocation.country) {
+    console.log('📍 Using cached location:', cachedLocation);
     return cachedLocation;
   }
 
@@ -25,59 +27,149 @@ export async function getUserLocation(): Promise<GeoLocation> {
     return locationPromise;
   }
 
-  // Start fetching location
-  locationPromise = fetchLocation();
+  // Start fetching location with multiple fallbacks
+  locationPromise = fetchLocationWithFallbacks();
   const location = await locationPromise;
   
-  // Cache the result
-  cachedLocation = location;
+  // Cache the result only if we got valid data
+  if (location.country || location.city) {
+    cachedLocation = location;
+  }
   
   return location;
 }
 
-async function fetchLocation(): Promise<GeoLocation> {
-  try {
-    // Use ipapi.co for geolocation (free tier: 1000 requests/day)
-    // Add timeout to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+/**
+ * Try multiple location APIs with fallbacks for maximum reliability
+ */
+async function fetchLocationWithFallbacks(): Promise<GeoLocation> {
+  const apis = [
+    // Primary: ipapi.co (1000 requests/day free)
+    async (): Promise<GeoLocation | null> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        
+        const response = await fetch('https://ipapi.co/json/', {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' },
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data.country_name || data.city) {
+          return {
+            country: data.country_name || null,
+            region: data.region || null,
+            city: data.city || null,
+          };
+        }
+      } catch (error) {
+        console.warn('📍 ipapi.co failed:', error);
+      }
+      return null;
+    },
     
-    const response = await fetch('https://ipapi.co/json/', {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    // Fallback 1: ip-api.com (45 requests/minute free)
+    async (): Promise<GeoLocation | null> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        
+        const response = await fetch('https://ip-api.com/json/?fields=status,country,regionName,city', {
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data.status === 'success' && (data.country || data.city)) {
+          return {
+            country: data.country || null,
+            region: data.regionName || null,
+            city: data.city || null,
+          };
+        }
+      } catch (error) {
+        console.warn('📍 ip-api.com failed:', error);
+      }
+      return null;
+    },
     
-    clearTimeout(timeoutId);
+    // Fallback 2: ipgeolocation.io (1000 requests/month free)
+    async (): Promise<GeoLocation | null> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        
+        const response = await fetch('https://api.ipgeolocation.io/ipgeo?apiKey=free', {
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data.country_name || data.city) {
+          return {
+            country: data.country_name || null,
+            region: data.state_prov || null,
+            city: data.city || null,
+          };
+        }
+      } catch (error) {
+        console.warn('📍 ipgeolocation.io failed:', error);
+      }
+      return null;
+    },
     
-    if (!response.ok) {
-      console.warn('Geo API error:', response.status, response.statusText);
-      return { country: null, region: null, city: null };
+    // Fallback 3: geojs.io (no rate limit, but less accurate)
+    async (): Promise<GeoLocation | null> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch('https://get.geojs.io/v1/ip/geo.json', {
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data.country || data.city) {
+          return {
+            country: data.country || null,
+            region: data.region || null,
+            city: data.city || null,
+          };
+        }
+      } catch (error) {
+        console.warn('📍 geojs.io failed:', error);
+      }
+      return null;
+    },
+  ];
+
+  // Try each API in sequence until one succeeds
+  for (const api of apis) {
+    const result = await api();
+    if (result && (result.country || result.city)) {
+      console.log('✅ Location fetched successfully:', result);
+      return result;
     }
-    
-    const data = await response.json();
-    
-    // Log for debugging
-    console.log('Location fetched:', { 
-      country: data.country_name, 
-      region: data.region, 
-      city: data.city 
-    });
-    
-    return {
-      country: data.country_name || null,
-      region: data.region || null,
-      city: data.city || null,
-    };
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      console.warn('Geolocation request timed out');
-    } else {
-      console.error('Geolocation error:', error);
-    }
-    return { country: null, region: null, city: null };
   }
+
+  // If all APIs failed, return empty location
+  console.warn('⚠️ All location APIs failed, returning empty location');
+  return { country: null, region: null, city: null };
 }
 
 /**

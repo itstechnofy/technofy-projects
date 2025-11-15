@@ -453,7 +453,17 @@ const LeadsTab = () => {
                   <td className="px-4 py-3 text-sm text-gray-900">{lead.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{lead.phone || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {lead.city && lead.country ? `${lead.city}, ${lead.country}` : lead.country || "—"}
+                    {(() => {
+                      if (lead.city && lead.country) {
+                        return lead.region 
+                          ? `${lead.city}, ${lead.region}, ${lead.country}`
+                          : `${lead.city}, ${lead.country}`;
+                      }
+                      if (lead.country) {
+                        return lead.region ? `${lead.region}, ${lead.country}` : lead.country;
+                      }
+                      return "—";
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{lead.where_did_you_find_us || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 capitalize">{lead.contact_method}</td>
