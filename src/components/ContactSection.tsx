@@ -13,6 +13,7 @@ import { MessageCircle, Send, Phone as PhoneIcon, Mail, Copy, Check } from "luci
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, contactSchema } from "@/lib/dataService";
+import { getUserLocation } from "@/lib/locationService";
 import { z } from "zod";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
@@ -130,13 +131,74 @@ const ContactSection = () => {
 
       // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
       if (selectedChannel !== "phone") {
-        await leadsService.createLead({
+        // Get user's location (country, region, city) via IP geolocation
+        console.log('📍 Starting location fetch...');
+        let location = { country: null, region: null, city: null };
+        
+        try {
+          location = await getUserLocation();
+          console.log('✅ Location received:', location);
+          
+          // Verify location data
+          if (!location.country && !location.city) {
+            console.warn('⚠️ Location API returned empty data. Trying alternative method...');
+            // Try direct API call as fallback
+            try {
+              const directResponse = await fetch('https://ipapi.co/json/', {
+                headers: { 'Accept': 'application/json' }
+              });
+              if (directResponse.ok) {
+                const directData = await directResponse.json();
+                location = {
+                  country: directData.country_name || null,
+                  region: directData.region || null,
+                  city: directData.city || null,
+                };
+                console.log('✅ Fallback location received:', location);
+              }
+            } catch (fallbackError) {
+              console.error('❌ Fallback location failed:', fallbackError);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to get location:', error);
+          // Continue without location if API fails
+        }
+
+        const leadData = {
           name: validatedData.name,
           phone: validatedData.phone,
           message: validatedData.message,
           where_did_you_find_us: validatedData.where_did_you_find_us,
           contact_method: validatedData.contact_method as "whatsapp" | "viber" | "messenger" | "email",
+          country: location.country,
+          region: location.region,
+          city: location.city,
+          geo_source: 'ip',
+        };
+
+        console.log('💾 Saving lead with location data:', {
+          name: leadData.name,
+          country: leadData.country,
+          region: leadData.region,
+          city: leadData.city,
         });
+
+        const result = await leadsService.createLead(leadData);
+
+        if (result.error) {
+          console.error('❌ Error saving lead:', result.error);
+          console.error('Error details:', JSON.stringify(result.error, null, 2));
+        } else {
+          console.log('✅ Lead saved successfully!');
+          console.log('Saved lead data:', {
+            id: result.data?.id,
+            name: result.data?.name,
+            country: result.data?.country,
+            region: result.data?.region,
+            city: result.data?.city,
+          });
+        }
 
         // Set rate limit timestamp
         localStorage.setItem("lastContactSubmit", Date.now().toString());

@@ -55,6 +55,10 @@ export type LeadInsert = {
   message: string;
   where_did_you_find_us?: string;
   contact_method: "whatsapp" | "viber" | "messenger" | "email";
+  country?: string;
+  region?: string;
+  city?: string;
+  geo_source?: string;
 };
 
 export type LeadUpdate = {
@@ -130,6 +134,10 @@ export const leadsService = {
         message: lead.message.trim().slice(0, 2000),
         where_did_you_find_us: lead.where_did_you_find_us?.trim().slice(0, 100) || null,
         contact_method: lead.contact_method,
+        country: lead.country || null,
+        region: lead.region || null,
+        city: lead.city || null,
+        geo_source: lead.geo_source || 'ip',
       })
       .select()
       .single();
