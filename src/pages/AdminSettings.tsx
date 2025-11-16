@@ -120,22 +120,16 @@ const AdminSettings = () => {
       // Always enable the setting - notifications will work via native or fallback
       setLocalSettings({ ...localSettings, desktop_push: true });
       
-      if (granted) {
-        toast.success("✅ Desktop notifications enabled! You'll receive native browser notifications.");
-      } else {
-        // Permission denied or not supported - will use fallback
-        const status = getNotificationSupportStatus();
-        if (status && !status.supported) {
-          toast.info("✅ Notifications enabled! You'll receive in-app notifications (native browser notifications not available on this device).");
-        } else if (Notification.permission === "denied") {
-          toast.info("✅ Notifications enabled! You'll receive in-app notifications. Native browser notifications were blocked - you can enable them in browser settings.");
-        } else {
-          toast.info("✅ Notifications enabled! You'll receive in-app notifications.");
-        }
-      }
+      // Show brief notification - just "Desktop notifications enabled"
+      toast.success("Desktop notifications enabled", {
+        duration: 200, // 1 second - brief notification
+      });
     } else {
       setLocalSettings({ ...localSettings, desktop_push: false });
-      toast.success("Desktop notifications disabled");
+      // Show brief notification - just "Desktop notifications disabled"
+      toast.success("Desktop notifications disabled", {
+        duration: 200, // 1 second - brief notification
+      });
     }
   };
 
