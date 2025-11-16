@@ -122,13 +122,13 @@ const AdminSettings = () => {
       
       // Show brief notification - just "Desktop notifications enabled"
       toast.success("Desktop notifications enabled", {
-        duration: 200, // 1 second - brief notification
+        duration: 400, // 1 second - brief notification
       });
     } else {
       setLocalSettings({ ...localSettings, desktop_push: false });
       // Show brief notification - just "Desktop notifications disabled"
       toast.success("Desktop notifications disabled", {
-        duration: 200, // 1 second - brief notification
+        duration: 400, // 1 second - brief notification
       });
     }
   };
