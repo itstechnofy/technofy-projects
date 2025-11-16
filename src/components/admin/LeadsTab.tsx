@@ -234,17 +234,10 @@ const LeadsTab = () => {
     const rows = allFilteredLeads.map((lead) => {
       const phDate = new Date(lead.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
       
-      // Format phone number to prevent Excel from converting to scientific notation
-      // Prefix with apostrophe - Excel standard way to force text (apostrophe is hidden in cell)
-      // When CSV is opened, Excel will see 'phone_number and treat it as text
-      const phoneFormatted = lead.phone 
-        ? `'${lead.phone}` // Apostrophe prefix - Excel treats as text, apostrophe is invisible
-        : "";
-      
       return [
         lead.id,
         lead.name,
-        phoneFormatted,
+        lead.phone || "", // Phone will be formatted in CSV generation
         lead.message.replace(/"/g, '""'),
         lead.where_did_you_find_us || "",
         lead.contact_method,
@@ -256,9 +249,22 @@ const LeadsTab = () => {
       ];
     });
 
+    // Generate CSV with proper phone number formatting
+    // Phone numbers need special handling to prevent scientific notation
     const csvContent = [
       headers.map((h) => `"${h}"`).join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ...rows.map((row) => 
+        row.map((cell, cellIndex) => {
+          // Format phone number (3rd column, index 2) to prevent scientific notation
+          // Use zero-width space (U+200B) - completely invisible, forces text format
+          if (cellIndex === 2 && cell && typeof cell === 'string' && cell.length > 0) {
+            // Phone number column - prefix with zero-width space (completely invisible)
+            return `"\u200B${cell}"`;
+          }
+          // Other columns - normal formatting
+          return `"${cell}"`;
+        }).join(",")
+      ),
     ].join("\n");
 
     const BOM = "\uFEFF";
