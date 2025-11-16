@@ -149,37 +149,106 @@ export const useNotifications = () => {
     }
   };
 
-  // Show desktop notification
+  // Show desktop notification with universal fallback for all browsers
   const showDesktopNotification = async (title: string, message: string) => {
-    if (!settings.desktop_push || isInDNDMode() || !("Notification" in window)) {
+    if (!settings.desktop_push || isInDNDMode()) {
       return;
     }
 
-    // Check permission and request if needed
-    if (Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.log('Desktop notification permission denied');
-        return;
+    // Try native browser notifications first (if supported)
+    if ("Notification" in window) {
+      try {
+        // Check permission and request if needed
+        if (Notification.permission === "default") {
+          try {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+              // Permission granted, show native notification
+              await showNativeNotification(title, message);
+              return;
+            }
+            // If permission denied or still default, fall through to fallback
+          } catch (error) {
+            console.log('Error requesting notification permission:', error);
+            // Fall through to fallback
+          }
+        } else if (Notification.permission === "granted") {
+          // Permission already granted, show native notification
+          await showNativeNotification(title, message);
+          return;
+        }
+        // If permission is "denied", fall through to fallback
+      } catch (error) {
+        console.log('Native notification failed, using fallback:', error);
+        // Fall through to fallback
       }
     }
 
-      if (Notification.permission === "granted") {
+    // Universal fallback: Always show toast notification for all browsers
+    // This ensures notifications work everywhere, just using different methods
+    showFallbackNotification(title, message);
+  };
+
+  // Show native browser notification
+  const showNativeNotification = async (title: string, message: string) => {
+    try {
+      const notificationOptions: NotificationOptions = {
+        body: message,
+        tag: "admin-notification",
+        requireInteraction: false,
+      };
+
+      // Add icon and badge (gracefully handle unsupported options)
       try {
-        new Notification(title, {
-          body: message,
-          icon: "/favicon.ico",
-          badge: "/favicon.ico",
-          tag: "admin-notification",
-          requireInteraction: false,
-        });
+        notificationOptions.icon = "/favicon.ico";
+        notificationOptions.badge = "/favicon.ico";
       } catch (e) {
-        console.error('Failed to show desktop notification:', e);
+        // Some browsers don't support all options, continue without them
       }
+
+      const notification = new Notification(title, notificationOptions);
+      
+      // Auto-close notification after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Handle notification click
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    } catch (error) {
+      console.error('Failed to create native notification:', error);
+      throw error; // Re-throw to trigger fallback
     }
   };
 
-  // Show toast notification
+  // Fallback notification method (works on all browsers)
+  const showFallbackNotification = (title: string, message: string) => {
+    // Use toast notification as universal fallback
+    // This works on ALL browsers including iOS Safari
+    // Determine icon based on title/message content for consistency
+    let icon = "🔔";
+    if (title.includes("Lead") || message.includes("lead")) icon = "👤";
+    else if (title.includes("Analytics") || message.includes("analytics")) icon = "📊";
+    else if (title.includes("Account") || message.includes("account")) icon = "🔐";
+    else if (title.includes("System") || message.includes("system")) icon = "⚙️";
+    
+    toast(title, {
+      description: message,
+      icon: icon,
+      duration: 6000, // Longer duration for desktop notifications
+      position: "top-right",
+      style: {
+        background: "white",
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+      },
+    });
+  };
+
+  // Show toast notification (this is the main notification display)
   const showToast = async (notification: Notification) => {
     if (isInDNDMode()) return;
 
@@ -192,15 +261,22 @@ export const useNotifications = () => {
 
     const config = typeConfig[notification.type];
     
-    toast(notification.title, {
-      description: notification.message,
-      icon: config.icon,
-      duration: 4000,
-    });
-
-    // Play sound and show desktop notification asynchronously
+    // Play sound
     playSound();
-    await showDesktopNotification(notification.title, notification.message);
+    
+    // If desktop notifications are enabled, use desktop notification system
+    // (which will show native if available, otherwise fallback toast)
+    // Otherwise, show regular toast
+    if (settings.desktop_push) {
+      await showDesktopNotification(notification.title, notification.message);
+    } else {
+      // Desktop notifications disabled, show regular toast
+      toast(notification.title, {
+        description: notification.message,
+        icon: config.icon,
+        duration: 4000,
+      });
+    }
   };
 
   // Fetch notifications
@@ -315,13 +391,76 @@ export const useNotifications = () => {
     toast.success("Settings saved successfully");
   };
 
-  // Request desktop notification permission
-  const requestDesktopPermission = async () => {
-    if ("Notification" in window && Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      return permission === "granted";
+  // Check if notifications are supported
+  const isNotificationSupported = () => {
+    // Check if Notification API exists
+    if (!("Notification" in window)) {
+      return false;
     }
-    return Notification.permission === "granted";
+    
+    // iOS Safari doesn't support notifications well
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    
+    // Safari desktop has limited support (requires user gesture and may need service worker)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    // Mobile browsers generally have limited notification support
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Notifications work best on desktop Chrome, Firefox, Edge
+    // Safari and mobile have limitations
+    return !isIOS; // iOS doesn't support web notifications well
+  };
+
+  // Get notification support status with details
+  const getNotificationSupportStatus = () => {
+    const supported = isNotificationSupported();
+    const hasNotificationAPI = "Notification" in window;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    return {
+      supported,
+      hasNotificationAPI,
+      isIOS,
+      isSafari,
+      isMobile,
+      reason: !hasNotificationAPI 
+        ? "Your browser doesn't support notifications"
+        : isIOS 
+        ? "iOS Safari doesn't support web notifications. Please use Chrome or Firefox on iOS."
+        : isSafari && isMobile
+        ? "Mobile Safari has limited notification support. Please use Chrome or Firefox."
+        : isSafari
+        ? "Safari requires a user gesture to request notification permission"
+        : !supported
+        ? "Notifications may not work on this device/browser"
+        : null
+    };
+  };
+
+  // Request desktop notification permission - works on all browsers
+  // Returns true if native notifications are available, false otherwise
+  // But notifications will still work via fallback method
+  const requestDesktopPermission = async () => {
+    // Try to request native notification permission
+    if ("Notification" in window) {
+      try {
+        if (Notification.permission === "default") {
+          const permission = await Notification.requestPermission();
+          return permission === "granted";
+        }
+        return Notification.permission === "granted";
+      } catch (error) {
+        console.log('Error requesting notification permission:', error);
+        // Return false but notifications will still work via fallback
+        return false;
+      }
+    }
+    
+    // No native notifications, but fallback will work
+    return false;
   };
 
   // Format time with timezone
@@ -417,5 +556,7 @@ export const useNotifications = () => {
     requestDesktopPermission,
     formatNotificationTime,
     fetchNotifications,
+    isNotificationSupported,
+    getNotificationSupportStatus,
   };
 };

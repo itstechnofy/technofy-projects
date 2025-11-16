@@ -233,10 +233,18 @@ const LeadsTab = () => {
 
     const rows = allFilteredLeads.map((lead) => {
       const phDate = new Date(lead.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" });
+      
+      // Format phone number to prevent Excel from converting to scientific notation
+      // Prefix with apostrophe - Excel standard way to force text (apostrophe is hidden in cell)
+      // When CSV is opened, Excel will see 'phone_number and treat it as text
+      const phoneFormatted = lead.phone 
+        ? `'${lead.phone}` // Apostrophe prefix - Excel treats as text, apostrophe is invisible
+        : "";
+      
       return [
         lead.id,
         lead.name,
-        lead.phone || "",
+        phoneFormatted,
         lead.message.replace(/"/g, '""'),
         lead.where_did_you_find_us || "",
         lead.contact_method,

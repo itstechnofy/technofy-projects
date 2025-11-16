@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -17,9 +17,38 @@ const AdminSettings = () => {
     updateSettings,
     requestDesktopPermission,
     loading,
+    isNotificationSupported,
+    getNotificationSupportStatus,
   } = useNotifications();
 
   const [localSettings, setLocalSettings] = useState(settings);
+  const [notificationStatus, setNotificationStatus] = useState<ReturnType<typeof getNotificationSupportStatus> | null>(null);
+
+  // Check notification support on mount and when permission changes
+  useEffect(() => {
+    if (isNotificationSupported && getNotificationSupportStatus) {
+      setNotificationStatus(getNotificationSupportStatus());
+    }
+  }, [isNotificationSupported, getNotificationSupportStatus]);
+
+  // Update status when permission changes
+  useEffect(() => {
+    const checkPermission = () => {
+      if (getNotificationSupportStatus) {
+        setNotificationStatus(getNotificationSupportStatus());
+      }
+    };
+    
+    // Check immediately
+    checkPermission();
+    
+    // Listen for focus events (user might have changed permission in another tab)
+    window.addEventListener('focus', checkPermission);
+    
+    return () => {
+      window.removeEventListener('focus', checkPermission);
+    };
+  }, [getNotificationSupportStatus]);
 
   const handleSave = async () => {
     await updateSettings(localSettings);
@@ -75,14 +104,29 @@ const AdminSettings = () => {
 
   const handleDesktopPushToggle = async (enabled: boolean) => {
     if (enabled) {
+      // First time: Request permission when toggle is turned ON
+      // This will show browser's permission popup
       const granted = await requestDesktopPermission();
+      
+      // Always enable the setting - notifications will work via native or fallback
+      setLocalSettings({ ...localSettings, desktop_push: true });
+      
       if (granted) {
-        setLocalSettings({ ...localSettings, desktop_push: true });
+        toast.success("✅ Desktop notifications enabled! You'll receive native browser notifications.");
       } else {
-        toast.error("Desktop notifications permission denied");
+        // Permission denied or not supported - will use fallback
+        const status = getNotificationSupportStatus();
+        if (status && !status.supported) {
+          toast.info("✅ Notifications enabled! You'll receive in-app notifications (native browser notifications not available on this device).");
+        } else if (Notification.permission === "denied") {
+          toast.info("✅ Notifications enabled! You'll receive in-app notifications. Native browser notifications were blocked - you can enable them in browser settings.");
+        } else {
+          toast.info("✅ Notifications enabled! You'll receive in-app notifications.");
+        }
       }
     } else {
       setLocalSettings({ ...localSettings, desktop_push: false });
+      toast.success("Desktop notifications disabled");
     }
   };
 
@@ -161,17 +205,50 @@ const AdminSettings = () => {
                 Show desktop notifications even when the browser tab is not active
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="desktop-push" className="cursor-pointer">
-                  Enable desktop notifications
-                </Label>
+                <div className="flex-1">
+                  <Label htmlFor="desktop-push" className="cursor-pointer">
+                    Enable desktop notifications
+                  </Label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {notificationStatus && notificationStatus.supported && Notification.permission === "granted"
+                      ? "✅ Native browser notifications enabled"
+                      : notificationStatus && !notificationStatus.supported
+                      ? "📱 In-app notifications (works on all browsers)"
+                      : "💡 Click to enable - will use native notifications if available, otherwise in-app notifications"
+                    }
+                  </p>
+                </div>
                 <Switch
                   id="desktop-push"
                   checked={localSettings.desktop_push}
                   onCheckedChange={handleDesktopPushToggle}
                 />
               </div>
+              {notificationStatus && notificationStatus.supported && Notification.permission === "denied" && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                  <p className="font-medium mb-1">ℹ️ Native Notifications Blocked</p>
+                  <p className="text-xs">
+                    Native browser notifications are blocked, but you'll still receive in-app notifications. 
+                    To enable native notifications, update your browser settings:
+                  </p>
+                  <ul className="text-xs mt-2 list-disc list-inside space-y-1">
+                    <li><strong>Chrome:</strong> Settings → Privacy → Site Settings → Notifications</li>
+                    <li><strong>Firefox:</strong> Preferences → Privacy → Permissions → Notifications</li>
+                    <li><strong>Safari:</strong> Preferences → Websites → Notifications</li>
+                  </ul>
+                </div>
+              )}
+              {notificationStatus && !notificationStatus.supported && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                  <p className="font-medium mb-1">ℹ️ In-App Notifications</p>
+                  <p className="text-xs">
+                    Native browser notifications aren't available on this device, but you'll receive in-app notifications 
+                    that work on all browsers and devices.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
