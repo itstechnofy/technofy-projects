@@ -186,63 +186,69 @@ const ContactSection = () => {
           city: leadData.city,
         });
 
-        // Save lead with Safari/iOS compatibility
-        // For Safari, we need to ensure the request completes before redirect
-        const result = await leadsService.createLead(leadData);
-
-        if (result.error) {
-          console.error('❌ Error saving lead:', result.error);
-          console.error('Error details:', JSON.stringify(result.error, null, 2));
-        } else {
-          console.log('✅ Lead saved successfully!');
-          console.log('Saved lead data:', {
-            id: result.data?.id,
-            name: result.data?.name,
-            country: result.data?.country,
-            region: result.data?.region,
-            city: result.data?.city,
-          });
-        }
-
-        // Safari/iOS backup: Send with keepalive to ensure request completes
-        // This ensures the lead is recorded even if Safari closes the page immediately
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || 
-                        /iPad|iPhone|iPod/.test(navigator.userAgent);
+        // CRITICAL FIX FOR SAFARI/iOS: Use direct fetch with keepalive and await
+        // This ensures the lead is saved BEFORE redirecting to external app
+        // Safari cancels async requests when opening external apps, so we must await completion
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         
-        if (isSafari && !result.error) {
-          // Use fetch with keepalive for Safari backup
-          // keepalive: true ensures the request completes even if the page closes
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          
-          if (supabaseUrl && supabaseKey) {
-            fetch(`${supabaseUrl}/rest/v1/leads`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Prefer': 'return=minimal',
-              },
-              body: JSON.stringify({
-                name: leadData.name.trim().slice(0, 100),
-                phone: leadData.phone?.trim().slice(0, 20) || null,
-                message: leadData.message.trim().slice(0, 2000),
-                where_did_you_find_us: leadData.where_did_you_find_us?.trim().slice(0, 100) || null,
-                contact_method: leadData.contact_method,
-                country: leadData.country || null,
-                region: leadData.region || null,
-                city: leadData.city || null,
-                geo_source: leadData.geo_source || 'ip',
-              }),
-              keepalive: true, // Critical for Safari - ensures request completes even if page closes
-            }).catch(err => console.warn('Safari backup fetch failed:', err));
-            console.log('📡 Safari backup: Lead sent via fetch with keepalive');
-          }
+        if (!supabaseUrl || !supabaseKey) {
+          console.error('❌ Missing Supabase environment variables');
+          toast({
+            title: "Error",
+            description: "Configuration error. Please contact support.",
+            variant: "destructive",
+          });
+          return;
         }
 
-        // Set rate limit timestamp
-        localStorage.setItem("lastContactSubmit", Date.now().toString());
+        try {
+          // Send lead data to Supabase using fetch with keepalive
+          // keepalive: true is critical for Safari - allows request to complete even if page closes
+          const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=representation',
+            },
+            body: JSON.stringify({
+              name: leadData.name.trim().slice(0, 100),
+              phone: leadData.phone?.trim().slice(0, 20) || null,
+              message: leadData.message.trim().slice(0, 2000),
+              where_did_you_find_us: leadData.where_did_you_find_us?.trim().slice(0, 100) || null,
+              contact_method: leadData.contact_method,
+              country: leadData.country || null,
+              region: leadData.region || null,
+              city: leadData.city || null,
+              geo_source: leadData.geo_source || 'ip',
+            }),
+            keepalive: true, // Critical for Safari - ensures request completes even if page closes
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Error saving lead:', response.status, errorData);
+            throw new Error(`Failed to save lead: ${response.status}`);
+          }
+
+          const savedLead = await response.json();
+          console.log('✅ Lead saved successfully!', {
+            id: savedLead[0]?.id,
+            name: savedLead[0]?.name,
+            country: savedLead[0]?.country,
+            region: savedLead[0]?.region,
+            city: savedLead[0]?.city,
+          });
+
+          // Set rate limit timestamp
+          localStorage.setItem("lastContactSubmit", Date.now().toString());
+        } catch (saveError) {
+          console.error('❌ Error saving lead:', saveError);
+          // Don't block user from contacting - still allow redirect
+          // But log the error for debugging
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -261,6 +267,7 @@ const ContactSection = () => {
       return;
     }
 
+    // Only redirect AFTER lead is saved (await completed above)
     const selectedCountry = countryCodes.find(c => c.code === countryCode);
     const actualDialCode = selectedCountry?.dialCode || countryCode;
     
@@ -289,12 +296,10 @@ const ContactSection = () => {
     }
 
     if (url) {
-      console.log("Redirecting to:", url);
-      // CRITICAL: Delay redirect by 200ms to ensure lead is recorded before Safari closes the page
-      // This is especially important for Safari/iOS which cancels requests when leaving the page
-      setTimeout(() => {
-        window.location.href = url;
-      }, 200);
+      console.log("✅ Lead saved, now redirecting to:", url);
+      // Redirect immediately after await completes - no delay needed
+      // The await above ensures Safari completes the request before this executes
+      window.location.href = url;
     }
   };
 
