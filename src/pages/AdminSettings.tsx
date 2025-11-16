@@ -220,14 +220,6 @@ const AdminSettings = () => {
                   <Label htmlFor="desktop-push" className="cursor-pointer">
                     Enable desktop notifications
                   </Label>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {notificationStatus && notificationStatus.supported && Notification.permission === "granted"
-                      ? "✅ Native browser notifications enabled"
-                      : notificationStatus && !notificationStatus.supported
-                      ? "📱 In-app notifications (works on all browsers)"
-                      : "💡 Click to enable - will use native notifications if available, otherwise in-app notifications"
-                    }
-                  </p>
                 </div>
                 <Switch
                   id="desktop-push"
