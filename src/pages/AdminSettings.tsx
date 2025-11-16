@@ -24,6 +24,14 @@ const AdminSettings = () => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [notificationStatus, setNotificationStatus] = useState<ReturnType<typeof getNotificationSupportStatus> | null>(null);
 
+  // Sync localSettings with settings from hook when settings are loaded/updated
+  // Only update if settings are actually loaded (not loading) and have valid data
+  useEffect(() => {
+    if (!loading && settings && Object.keys(settings).length > 0) {
+      setLocalSettings(settings);
+    }
+  }, [settings, loading]);
+
   // Check notification support on mount and when permission changes
   useEffect(() => {
     if (isNotificationSupported && getNotificationSupportStatus) {
@@ -52,6 +60,7 @@ const AdminSettings = () => {
 
   const handleSave = async () => {
     await updateSettings(localSettings);
+    // Settings will be updated in the hook, which will trigger the useEffect above to sync localSettings
   };
 
   const handleTestNotification = async () => {

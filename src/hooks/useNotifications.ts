@@ -324,15 +324,31 @@ export const useNotifications = () => {
       // Create default settings
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("admin_settings").insert({
-          user_id: user.id,
-          sound_enabled: true,
-          desktop_push: false,
-          dnd_enabled: false,
-          dnd_start: "22:00",
-          dnd_end: "07:00",
-          timezone: "Asia/Manila",
-        });
+        const { data: newData, error: insertError } = await supabase
+          .from("admin_settings")
+          .insert({
+            user_id: user.id,
+            sound_enabled: true,
+            desktop_push: false,
+            dnd_enabled: false,
+            dnd_start: "22:00",
+            dnd_end: "07:00",
+            timezone: "Asia/Manila",
+          })
+          .select()
+          .single();
+        
+        if (!insertError && newData) {
+          // Update state with the newly created settings
+          setSettings({
+            sound_enabled: newData.sound_enabled,
+            desktop_push: newData.desktop_push,
+            dnd_enabled: newData.dnd_enabled,
+            dnd_start: newData.dnd_start,
+            dnd_end: newData.dnd_end,
+            timezone: newData.timezone,
+          });
+        }
       }
     }
   };
@@ -376,10 +392,18 @@ export const useNotifications = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
+    // Use upsert to ensure settings are created if they don't exist
+    const { data, error } = await supabase
       .from("admin_settings")
-      .update(newSettings)
-      .eq("user_id", user.id);
+      .upsert({
+        user_id: user.id,
+        ...newSettings,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Error updating settings:", error);
@@ -387,7 +411,21 @@ export const useNotifications = () => {
       return;
     }
 
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    // Update local state with the saved data from database
+    if (data) {
+      setSettings({
+        sound_enabled: data.sound_enabled,
+        desktop_push: data.desktop_push,
+        dnd_enabled: data.dnd_enabled,
+        dnd_start: data.dnd_start,
+        dnd_end: data.dnd_end,
+        timezone: data.timezone,
+      });
+    } else {
+      // Fallback: update with newSettings if data not returned
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    }
+    
     toast.success("Settings saved successfully");
   };
 
