@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, contactSchema } from "@/lib/dataService";
 import { getUserLocation } from "@/lib/locationService";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
@@ -185,6 +186,8 @@ const ContactSection = () => {
           city: leadData.city,
         });
 
+        // Save lead with Safari/iOS compatibility
+        // For Safari, we need to ensure the request completes before redirect
         const result = await leadsService.createLead(leadData);
 
         if (result.error) {
@@ -199,6 +202,43 @@ const ContactSection = () => {
             region: result.data?.region,
             city: result.data?.city,
           });
+        }
+
+        // Safari/iOS backup: Send with keepalive to ensure request completes
+        // This ensures the lead is recorded even if Safari closes the page immediately
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || 
+                        /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isSafari && !result.error) {
+          // Use fetch with keepalive for Safari backup
+          // keepalive: true ensures the request completes even if the page closes
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          
+          if (supabaseUrl && supabaseKey) {
+            fetch(`${supabaseUrl}/rest/v1/leads`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Prefer': 'return=minimal',
+              },
+              body: JSON.stringify({
+                name: leadData.name.trim().slice(0, 100),
+                phone: leadData.phone?.trim().slice(0, 20) || null,
+                message: leadData.message.trim().slice(0, 2000),
+                where_did_you_find_us: leadData.where_did_you_find_us?.trim().slice(0, 100) || null,
+                contact_method: leadData.contact_method,
+                country: leadData.country || null,
+                region: leadData.region || null,
+                city: leadData.city || null,
+                geo_source: leadData.geo_source || 'ip',
+              }),
+              keepalive: true, // Critical for Safari - ensures request completes even if page closes
+            }).catch(err => console.warn('Safari backup fetch failed:', err));
+            console.log('📡 Safari backup: Lead sent via fetch with keepalive');
+          }
         }
 
         // Set rate limit timestamp
@@ -250,8 +290,11 @@ const ContactSection = () => {
 
     if (url) {
       console.log("Redirecting to:", url);
-      // Use direct navigation instead of window.open for better mobile support
-      window.location.href = url;
+      // CRITICAL: Delay redirect by 200ms to ensure lead is recorded before Safari closes the page
+      // This is especially important for Safari/iOS which cancels requests when leaving the page
+      setTimeout(() => {
+        window.location.href = url;
+      }, 200);
     }
   };
 
