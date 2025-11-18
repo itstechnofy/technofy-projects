@@ -210,6 +210,18 @@ const LeadsTab = () => {
     }
   }, []);
 
+  // Load data on mount and when dependencies change
+  useEffect(() => {
+    console.log('🚀 LeadsTab useEffect triggered');
+    loadLeads();
+    loadAllLeads();
+  }, [loadLeads, loadAllLeads]);
+
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    setPage(1);
+  }, [searchQuery, statusFilter, sourceFilter]);
+
   const openLeadDetails = (lead: Lead) => {
     setSelectedLead(lead);
     setNotes(lead.notes || "");
