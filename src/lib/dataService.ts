@@ -126,6 +126,21 @@ export const leadsService = {
       return { data: null, error: error as Error };
     }
 
+    // Ensure we're using anon role for anonymous inserts
+    // Check current session - if authenticated, we might need to use anon client
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      console.warn('⚠️ User is authenticated. For contact form, we should use anon role.');
+      // For contact form submissions, we want to use anon role
+      // But since the policy allows both anon and authenticated, this should still work
+    }
+
+    console.log('💾 Attempting to insert lead:', {
+      name: lead.name,
+      contact_method: lead.contact_method,
+      hasPhone: !!lead.phone,
+    });
+
     const { data, error } = await supabase
       .from("leads")
       .insert({
@@ -145,6 +160,10 @@ export const leadsService = {
     // Improve error handling - extract better error messages
     if (error) {
       console.error('Supabase error saving lead:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
       // Supabase errors can have different structures, extract message properly
       const errorMessage = error.message || error.details || 'Failed to save lead to database';
       return { 
