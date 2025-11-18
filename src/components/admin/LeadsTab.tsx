@@ -84,13 +84,22 @@ const LeadsTab = () => {
     let totalCount = 0;
 
     if (oldLeadsResult.data) {
+      console.log('✅ Old leads data received:', oldLeadsResult.data.length, 'records');
       allLeads.push(...(oldLeadsResult.data as Lead[]));
       totalCount += oldLeadsResult.count || 0;
+    } else {
+      console.log('⚠️ Old leads data is null or undefined');
     }
 
     if (newLeadsResult.data) {
+      console.log('✅ New leads (contact_submissions) data received:', newLeadsResult.data.length, 'records');
       allLeads.push(...(newLeadsResult.data as Lead[]));
       totalCount += newLeadsResult.count || 0;
+    } else {
+      console.log('⚠️ New leads (contact_submissions) data is null or undefined');
+      if (newLeadsResult.error) {
+        console.error('❌ Contact submissions error:', newLeadsResult.error);
+      }
     }
 
     // Apply filters to combined data
@@ -192,16 +201,11 @@ const LeadsTab = () => {
     );
 
     if (oldLeadsResult.error || newLeadsResult.error) {
-      console.error('❌ Error loading all leads:', {
+      console.error('Error loading all leads:', {
         oldLeadsError: oldLeadsResult.error,
         newLeadsError: newLeadsResult.error
       });
     } else {
-      console.log('✅ Successfully loaded all leads for stats:', {
-        totalCombined: allLeads.length,
-        fromLeads: oldLeadsResult.data?.length || 0,
-        fromContactSubmissions: newLeadsResult.data?.length || 0
-      });
       setAllLeads(allLeads);
     }
   }, []);
