@@ -53,6 +53,7 @@ const LeadsTab = () => {
 
   const loadLeads = useCallback(async () => {
     // Fetch from both tables and combine
+    console.log('🔍 Loading leads from both tables...');
     const [oldLeadsResult, newLeadsResult] = await Promise.all([
       supabase
         .from("leads")
@@ -64,6 +65,19 @@ const LeadsTab = () => {
         .select("*", { count: "exact" })
         .order("created_at", { ascending: false }),
     ]);
+
+    console.log('📊 Leads query results:', {
+      oldLeads: {
+        data: oldLeadsResult.data?.length || 0,
+        error: oldLeadsResult.error,
+        count: oldLeadsResult.count
+      },
+      newLeads: {
+        data: newLeadsResult.data?.length || 0,
+        error: newLeadsResult.error,
+        count: newLeadsResult.count
+      }
+    });
 
     // Combine results
     const allLeads: Lead[] = [];
@@ -130,6 +144,7 @@ const LeadsTab = () => {
 
   const loadAllLeads = useCallback(async () => {
     // Fetch from both tables
+    console.log('🔍 Loading all leads for stats...');
     const [oldLeadsResult, newLeadsResult] = await Promise.all([
       supabase
         .from("leads")
@@ -141,6 +156,17 @@ const LeadsTab = () => {
         .select("*")
         .order("created_at", { ascending: false }),
     ]);
+
+    console.log('📊 All leads query results:', {
+      oldLeads: {
+        data: oldLeadsResult.data?.length || 0,
+        error: oldLeadsResult.error
+      },
+      newLeads: {
+        data: newLeadsResult.data?.length || 0,
+        error: newLeadsResult.error
+      }
+    });
 
     // Combine results
     const allLeads: Lead[] = [];
