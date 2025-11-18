@@ -14,47 +14,58 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { leadsService, contactSchema } from "@/lib/dataService";
 import { getUserLocation } from "@/lib/locationService";
-import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import * as Flags from "country-flag-icons/react/3x2";
 
 type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 
+// Helper component to render country flags
+const CountryFlag = ({ countryCode }: { countryCode: string }) => {
+  try {
+    const FlagComponent = (Flags as any)[countryCode];
+    if (!FlagComponent) return null;
+    return <FlagComponent className="w-5 h-4 object-cover rounded-sm" title={countryCode} />;
+  } catch (error) {
+    return null;
+  }
+};
+
 const countryCodes = [
-  { code: "+63", country: "Philippines", flag: "🇵🇭" },
-  { code: "+1-US", country: "USA", flag: "🇺🇸", dialCode: "+1" },
-  { code: "+1-CA", country: "Canada", flag: "🇨🇦", dialCode: "+1" },
-  { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
-  { code: "+61", country: "Australia", flag: "🇦🇺" },
-  { code: "+852", country: "Hong Kong", flag: "🇭🇰" },
-  { code: "+886", country: "Taiwan", flag: "🇹🇼" },
-  { code: "+65", country: "Singapore", flag: "🇸🇬" },
-  { code: "+81", country: "Japan", flag: "🇯🇵" },
-  { code: "+82", country: "South Korea", flag: "🇰🇷" },
-  { code: "+86", country: "China", flag: "🇨🇳" },
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  { code: "+971", country: "UAE", flag: "🇦🇪" },
-  { code: "+974", country: "Qatar", flag: "🇶🇦" },
-  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
-  { code: "+965", country: "Kuwait", flag: "🇰🇼" },
-  { code: "+968", country: "Oman", flag: "🇴🇲" },
-  { code: "+973", country: "Bahrain", flag: "🇧🇭" },
-  { code: "+39", country: "Italy", flag: "🇮🇹" },
-  { code: "+34", country: "Spain", flag: "🇪🇸" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
-  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "+41", country: "Switzerland", flag: "🇨🇭" },
-  { code: "+32", country: "Belgium", flag: "🇧🇪" },
-  { code: "+64", country: "New Zealand", flag: "🇳🇿" },
-  { code: "+60", country: "Malaysia", flag: "🇲🇾" },
-  { code: "+66", country: "Thailand", flag: "🇹🇭" },
-  { code: "+84", country: "Vietnam", flag: "🇻🇳" },
-  { code: "+62", country: "Indonesia", flag: "🇮🇩" },
-  { code: "+20", country: "Egypt", flag: "🇪🇬" },
-  { code: "+27", country: "South Africa", flag: "🇿🇦" },
-  { code: "+55", country: "Brazil", flag: "🇧🇷" },
-  { code: "+52", country: "Mexico", flag: "🇲🇽" },
-  { code: "+7", country: "Russia", flag: "🇷🇺" },
+  { code: "+63", country: "Philippines", isoCode: "PH" },
+  { code: "+1-US", country: "USA", isoCode: "US", dialCode: "+1" },
+  { code: "+1-CA", country: "Canada", isoCode: "CA", dialCode: "+1" },
+  { code: "+44", country: "United Kingdom", isoCode: "GB" },
+  { code: "+61", country: "Australia", isoCode: "AU" },
+  { code: "+852", country: "Hong Kong", isoCode: "HK" },
+  { code: "+886", country: "Taiwan", isoCode: "TW" },
+  { code: "+65", country: "Singapore", isoCode: "SG" },
+  { code: "+81", country: "Japan", isoCode: "JP" },
+  { code: "+82", country: "South Korea", isoCode: "KR" },
+  { code: "+86", country: "China", isoCode: "CN" },
+  { code: "+91", country: "India", isoCode: "IN" },
+  { code: "+971", country: "UAE", isoCode: "AE" },
+  { code: "+974", country: "Qatar", isoCode: "QA" },
+  { code: "+966", country: "Saudi Arabia", isoCode: "SA" },
+  { code: "+965", country: "Kuwait", isoCode: "KW" },
+  { code: "+968", country: "Oman", isoCode: "OM" },
+  { code: "+973", country: "Bahrain", isoCode: "BH" },
+  { code: "+39", country: "Italy", isoCode: "IT" },
+  { code: "+34", country: "Spain", isoCode: "ES" },
+  { code: "+33", country: "France", isoCode: "FR" },
+  { code: "+49", country: "Germany", isoCode: "DE" },
+  { code: "+31", country: "Netherlands", isoCode: "NL" },
+  { code: "+41", country: "Switzerland", isoCode: "CH" },
+  { code: "+32", country: "Belgium", isoCode: "BE" },
+  { code: "+64", country: "New Zealand", isoCode: "NZ" },
+  { code: "+60", country: "Malaysia", isoCode: "MY" },
+  { code: "+66", country: "Thailand", isoCode: "TH" },
+  { code: "+84", country: "Vietnam", isoCode: "VN" },
+  { code: "+62", country: "Indonesia", isoCode: "ID" },
+  { code: "+20", country: "Egypt", isoCode: "EG" },
+  { code: "+27", country: "South Africa", isoCode: "ZA" },
+  { code: "+55", country: "Brazil", isoCode: "BR" },
+  { code: "+52", country: "Mexico", isoCode: "MX" },
+  { code: "+7", country: "Russia", isoCode: "RU" },
 ];
 
 const ContactSection = () => {
@@ -186,69 +197,24 @@ const ContactSection = () => {
           city: leadData.city,
         });
 
-        // CRITICAL FIX FOR SAFARI/iOS: Use direct fetch with keepalive and await
-        // This ensures the lead is saved BEFORE redirecting to external app
-        // Safari cancels async requests when opening external apps, so we must await completion
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        
-        if (!supabaseUrl || !supabaseKey) {
-          console.error('❌ Missing Supabase environment variables');
-          toast({
-            title: "Error",
-            description: "Configuration error. Please contact support.",
-            variant: "destructive",
+        const result = await leadsService.createLead(leadData);
+
+        if (result.error) {
+          console.error('❌ Error saving lead:', result.error);
+          console.error('Error details:', JSON.stringify(result.error, null, 2));
+        } else {
+          console.log('✅ Lead saved successfully!');
+          console.log('Saved lead data:', {
+            id: result.data?.id,
+            name: result.data?.name,
+            country: result.data?.country,
+            region: result.data?.region,
+            city: result.data?.city,
           });
-          return;
         }
 
-        try {
-          // Send lead data to Supabase using fetch with keepalive
-          // keepalive: true is critical for Safari - allows request to complete even if page closes
-          const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Prefer': 'return=representation',
-            },
-            body: JSON.stringify({
-              name: leadData.name.trim().slice(0, 100),
-              phone: leadData.phone?.trim().slice(0, 20) || null,
-              message: leadData.message.trim().slice(0, 2000),
-              where_did_you_find_us: leadData.where_did_you_find_us?.trim().slice(0, 100) || null,
-              contact_method: leadData.contact_method,
-              country: leadData.country || null,
-              region: leadData.region || null,
-              city: leadData.city || null,
-              geo_source: leadData.geo_source || 'ip',
-            }),
-            keepalive: true, // Critical for Safari - ensures request completes even if page closes
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('❌ Error saving lead:', response.status, errorData);
-            throw new Error(`Failed to save lead: ${response.status}`);
-          }
-
-          const savedLead = await response.json();
-          console.log('✅ Lead saved successfully!', {
-            id: savedLead[0]?.id,
-            name: savedLead[0]?.name,
-            country: savedLead[0]?.country,
-            region: savedLead[0]?.region,
-            city: savedLead[0]?.city,
-          });
-
-          // Set rate limit timestamp
-          localStorage.setItem("lastContactSubmit", Date.now().toString());
-        } catch (saveError) {
-          console.error('❌ Error saving lead:', saveError);
-          // Don't block user from contacting - still allow redirect
-          // But log the error for debugging
-        }
+        // Set rate limit timestamp
+        localStorage.setItem("lastContactSubmit", Date.now().toString());
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -267,7 +233,6 @@ const ContactSection = () => {
       return;
     }
 
-    // Only redirect AFTER lead is saved (await completed above)
     const selectedCountry = countryCodes.find(c => c.code === countryCode);
     const actualDialCode = selectedCountry?.dialCode || countryCode;
     
@@ -296,9 +261,8 @@ const ContactSection = () => {
     }
 
     if (url) {
-      console.log("✅ Lead saved, now redirecting to:", url);
-      // Redirect immediately after await completes - no delay needed
-      // The await above ensures Safari completes the request before this executes
+      console.log("Redirecting to:", url);
+      // Use direct navigation instead of window.open for better mobile support
       window.location.href = url;
     }
   };
@@ -415,14 +379,23 @@ const ContactSection = () => {
                   <Label htmlFor="phone" className="mb-1.5 text-sm">Phone</Label>
                   <div className="flex gap-2">
                     <Select value={countryCode} onValueChange={setCountryCode}>
-                      <SelectTrigger className="h-11 md:h-12 w-[110px] rounded-lg border-[#D6D6D6] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0">
-                        <SelectValue>
+                      <SelectTrigger className="h-11 md:h-12 w-[110px] rounded-lg border-[#D6D6D6] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 [&>span:first-child]:hidden">
+                        <SelectValue placeholder="Select country" className="hidden" />
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
                           {(() => {
                             const selected = countryCodes.find(c => c.code === countryCode);
-                            const displayCode = selected?.dialCode || selected?.code || countryCode;
-                            return `${selected?.flag} ${displayCode}`;
+                            if (selected) {
+                              const displayCode = selected.dialCode || selected.code;
+                              return (
+                                <>
+                                  <CountryFlag countryCode={selected.isoCode} />
+                                  <span className="text-sm font-medium truncate">{displayCode}</span>
+                                </>
+                              );
+                            }
+                            return <span className="text-sm text-muted-foreground">Select</span>;
                           })()}
-                        </SelectValue>
+                        </div>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] overflow-y-auto">
                         {countryCodes.map((country) => {
@@ -430,7 +403,7 @@ const ContactSection = () => {
                           return (
                             <SelectItem key={country.code} value={country.code}>
                               <span className="flex items-center gap-2">
-                                <span>{country.flag}</span>
+                                <CountryFlag countryCode={country.isoCode} />
                                 <span>{country.country}</span>
                                 <span className="text-muted-foreground">{displayCode}</span>
                               </span>
