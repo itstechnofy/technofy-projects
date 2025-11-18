@@ -185,6 +185,23 @@ export const leadsService = {
       };
     }
     
+    // Create notification manually (non-blocking) if lead was saved successfully
+    // This replaces the database trigger which was causing RLS issues
+    if (data) {
+      // Fire and forget - don't block the response
+      // Import dynamically to avoid circular dependencies
+      setTimeout(() => {
+        import('@/lib/notificationService')
+          .then(({ notifyNewLead }) => {
+            // notifyNewLead doesn't return a promise, so just call it
+            notifyNewLead(data.name, data.id);
+          })
+          .catch(() => {
+            // Ignore import errors - notifications are optional
+          });
+      }, 0);
+    }
+    
     return { data, error: null };
   },
 
