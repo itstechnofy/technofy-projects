@@ -164,8 +164,9 @@ export const leadsService = {
 
     console.log('📤 Inserting lead data:', JSON.stringify(insertData, null, 2));
 
-    const { data, error } = await supabase
-      .from("leads")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("contact_submissions")
       .insert(insertData)
       .select()
       .single();
@@ -194,7 +195,7 @@ export const leadsService = {
         import('@/lib/notificationService')
           .then(({ notifyNewLead }) => {
             // notifyNewLead doesn't return a promise, so just call it
-            notifyNewLead(data.name, data.id);
+            notifyNewLead((data as Lead).name, (data as Lead).id);
           })
           .catch(() => {
             // Ignore import errors - notifications are optional
@@ -206,30 +207,89 @@ export const leadsService = {
   },
 
   async getAllLeads(): Promise<{ data: Lead[] | null; error: Error | null }> {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-    return { data: data as Lead[] | null, error };
+    // Fetch from both old leads table and new contact_submissions table
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    // Combine results from both tables
+    const allLeads: Lead[] = [];
+    
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+    }
+    
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Sort by created_at descending (newest first)
+    allLeads.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // Return error if both failed, otherwise return combined data
+    const error = oldLeadsResult.error && newLeadsResult.error 
+      ? oldLeadsResult.error 
+      : null;
+
+    return { data: allLeads.length > 0 ? allLeads : null, error };
   },
 
   async updateLead(id: string, updates: LeadUpdate) {
-    const { data, error } = await supabase
+    // Try new table first, then fall back to old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newResult = await (supabase as any)
+      .from("contact_submissions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (newResult.data) {
+      return { data: newResult.data, error: null };
+    }
+
+    // Fall back to old leads table
+    const oldResult = await supabase
       .from("leads")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
-    return { data, error };
+
+    return { data: oldResult.data, error: oldResult.error };
   },
 
   async getLeadById(id: string): Promise<{ data: Lead | null; error: Error | null }> {
-    const { data, error } = await supabase
+    // Try new table first, then fall back to old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newResult = await (supabase as any)
+      .from("contact_submissions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (newResult.data) {
+      return { data: newResult.data as Lead, error: null };
+    }
+
+    // Fall back to old leads table
+    const oldResult = await supabase
       .from("leads")
       .select("*")
       .eq("id", id)
       .single();
-    return { data: data as Lead | null, error };
+
+    return { data: oldResult.data as Lead | null, error: oldResult.error };
   },
 };
 
