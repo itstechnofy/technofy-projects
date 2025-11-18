@@ -137,6 +137,12 @@ const LeadsTab = () => {
         variant: "destructive",
       });
     } else {
+      console.log('✅ Successfully loaded leads:', {
+        totalCombined: allLeads.length,
+        filtered: filteredLeads.length,
+        paginated: paginatedLeads.length,
+        totalCount: filteredLeads.length
+      });
       setLeads(paginatedLeads);
       setTotalCount(filteredLeads.length);
     }
@@ -186,11 +192,16 @@ const LeadsTab = () => {
     );
 
     if (oldLeadsResult.error || newLeadsResult.error) {
-      console.error('Error loading all leads:', {
+      console.error('❌ Error loading all leads:', {
         oldLeadsError: oldLeadsResult.error,
         newLeadsError: newLeadsResult.error
       });
     } else {
+      console.log('✅ Successfully loaded all leads for stats:', {
+        totalCombined: allLeads.length,
+        fromLeads: oldLeadsResult.data?.length || 0,
+        fromContactSubmissions: newLeadsResult.data?.length || 0
+      });
       setAllLeads(allLeads);
     }
   }, []);
