@@ -149,19 +149,24 @@ export const leadsService = {
       role: 'anon (for contact form)',
     });
 
+    // Prepare the data to insert
+    const insertData = {
+      name: lead.name.trim().slice(0, 100),
+      phone: lead.phone?.trim().slice(0, 20) || null,
+      message: lead.message.trim().slice(0, 2000),
+      where_did_you_find_us: lead.where_did_you_find_us?.trim().slice(0, 100) || null,
+      contact_method: lead.contact_method,
+      country: lead.country || null,
+      region: lead.region || null,
+      city: lead.city || null,
+      geo_source: lead.geo_source || 'ip',
+    };
+
+    console.log('📤 Inserting lead data:', JSON.stringify(insertData, null, 2));
+
     const { data, error } = await supabase
       .from("leads")
-      .insert({
-        name: lead.name.trim().slice(0, 100),
-        phone: lead.phone?.trim().slice(0, 20) || null,
-        message: lead.message.trim().slice(0, 2000),
-        where_did_you_find_us: lead.where_did_you_find_us?.trim().slice(0, 100) || null,
-        contact_method: lead.contact_method,
-        country: lead.country || null,
-        region: lead.region || null,
-        city: lead.city || null,
-        geo_source: lead.geo_source || 'ip',
-      })
+      .insert(insertData)
       .select()
       .single();
     
