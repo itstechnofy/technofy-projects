@@ -113,9 +113,13 @@ const LeadsTab = () => {
     const paginatedLeads = filteredLeads.slice(from, to);
 
     if (oldLeadsResult.error || newLeadsResult.error) {
+      console.error('Error loading leads:', {
+        oldLeadsError: oldLeadsResult.error,
+        newLeadsError: newLeadsResult.error
+      });
       toast({
         title: "Error",
-        description: "Failed to load leads",
+        description: `Failed to load leads: ${oldLeadsResult.error?.message || newLeadsResult.error?.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } else {
@@ -155,7 +159,12 @@ const LeadsTab = () => {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    if (!oldLeadsResult.error && !newLeadsResult.error) {
+    if (oldLeadsResult.error || newLeadsResult.error) {
+      console.error('Error loading all leads:', {
+        oldLeadsError: oldLeadsResult.error,
+        newLeadsError: newLeadsResult.error
+      });
+    } else {
       setAllLeads(allLeads);
     }
   }, []);
