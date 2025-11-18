@@ -37,6 +37,11 @@ export const supabase = createClient<Database>(
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
-    }
+    },
+    global: {
+      headers: {
+        'apikey': SUPABASE_PUBLISHABLE_KEY,
+      },
+    },
   }
 );
