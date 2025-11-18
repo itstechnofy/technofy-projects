@@ -141,6 +141,14 @@ export const leadsService = {
       hasPhone: !!lead.phone,
     });
 
+    // Log Supabase configuration for debugging
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔑 Supabase session:', {
+      hasSession: !!session,
+      userId: session?.user?.id || 'none',
+      role: 'anon (for contact form)',
+    });
+
     const { data, error } = await supabase
       .from("leads")
       .insert({
