@@ -34,6 +34,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const LeadsTab = () => {
+  console.log('🎯 LeadsTab component rendering...');
+  
   const [leads, setLeads] = useState<Lead[]>([]);
   const [allLeads, setAllLeads] = useState<Lead[]>([]); // For stats and sources
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,6 +54,14 @@ const LeadsTab = () => {
   const { toast } = useToast();
 
   const loadLeads = useCallback(async () => {
+    // Check authentication first
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔐 Admin session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      email: session?.user?.email
+    });
+
     // Fetch from both tables and combine
     console.log('🔍 Loading leads from both tables...');
     const [oldLeadsResult, newLeadsResult] = await Promise.all([
@@ -512,8 +522,17 @@ const LeadsTab = () => {
     });
   };
 
+  // Debug: Log component render
+  console.log('🎯 LeadsTab render - leads count:', leads.length, 'allLeads count:', allLeads.length);
+
   return (
     <div className="space-y-6">
+      {/* Debug indicator - remove after testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 p-2 text-xs">
+          🔍 Debug: LeadsTab loaded | Leads: {leads.length} | AllLeads: {allLeads.length} | TotalCount: {totalCount}
+        </div>
+      )}
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="border border-gray-200 p-6 rounded-lg bg-white">
