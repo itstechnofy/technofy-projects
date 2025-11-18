@@ -16,7 +16,7 @@ export const contactSchema = z.object({
     .max(255, "Email must be less than 255 characters")
     .optional(),
   phone: z.string()
-    .regex(/^[\+]?[0-9\s\-()]+$/, "Phone number contains invalid characters")
+    .regex(/^[+]?[0-9\s\-()]+$/, "Phone number contains invalid characters")
     .min(7, "Phone number is too short")
     .max(20, "Phone number is too long")
     .optional(),
@@ -83,7 +83,7 @@ export const authService = {
     return { error };
   },
 
-  async getSession(): Promise<{ session: Session | null; error: any }> {
+  async getSession(): Promise<{ session: Session | null; error: Error | null }> {
     const { data, error } = await supabase.auth.getSession();
     return { session: data.session, error };
   },
@@ -141,10 +141,22 @@ export const leadsService = {
       })
       .select()
       .single();
-    return { data, error };
+    
+    // Improve error handling - extract better error messages
+    if (error) {
+      console.error('Supabase error saving lead:', error);
+      // Supabase errors can have different structures, extract message properly
+      const errorMessage = error.message || error.details || 'Failed to save lead to database';
+      return { 
+        data: null, 
+        error: new Error(errorMessage) 
+      };
+    }
+    
+    return { data, error: null };
   },
 
-  async getAllLeads(): Promise<{ data: Lead[] | null; error: any }> {
+  async getAllLeads(): Promise<{ data: Lead[] | null; error: Error | null }> {
     const { data, error } = await supabase
       .from("leads")
       .select("*")
@@ -162,7 +174,7 @@ export const leadsService = {
     return { data, error };
   },
 
-  async getLeadById(id: string): Promise<{ data: Lead | null; error: any }> {
+  async getLeadById(id: string): Promise<{ data: Lead | null; error: Error | null }> {
     const { data, error } = await supabase
       .from("leads")
       .select("*")
