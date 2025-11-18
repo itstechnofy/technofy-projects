@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,11 +46,7 @@ const AnalyticsTab = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadData();
-  }, [dateRange]);
-
-  const getDateRangeFilter = () => {
+  const getDateRangeFilter = useCallback(() => {
     const now = new Date();
     if (dateRange === "today") {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -62,9 +58,9 @@ const AnalyticsTab = () => {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       return monthAgo.toISOString();
     }
-  };
+  }, [dateRange]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     const dateFilter = getDateRangeFilter();
 
@@ -85,11 +81,29 @@ const AnalyticsTab = () => {
       setVisits(visitsData || []);
     }
 
-    // Load leads
-    const { data: leadsData, error: leadsError } = await supabase
-      .from("leads")
-      .select("id, created_at, contact_method, country, region, city")
-      .gte("created_at", dateFilter);
+    // Load leads from both tables
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("id, created_at, contact_method, country, region, city")
+        .gte("created_at", dateFilter),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("id, created_at, contact_method, country, region, city")
+        .gte("created_at", dateFilter),
+    ]);
+
+    // Combine results
+    const leadsData: Array<{ id: string; created_at: string; contact_method: string; country: string | null; region: string | null; city: string | null }> = [];
+    if (oldLeadsResult.data) {
+      leadsData.push(...oldLeadsResult.data);
+    }
+    if (newLeadsResult.data) {
+      leadsData.push(...newLeadsResult.data);
+    }
+
+    const leadsError = oldLeadsResult.error || newLeadsResult.error;
 
     if (leadsError) {
       toast({
@@ -102,7 +116,11 @@ const AnalyticsTab = () => {
     }
 
     setLoading(false);
-  };
+  }, [getDateRangeFilter, toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getKPIs = () => {
     // Count unique visitors by ip_hash (excluding null/undefined)
