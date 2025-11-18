@@ -72,9 +72,10 @@ const AnalyticsTab = () => {
       .order("occurred_at", { ascending: false });
 
     if (visitsError) {
+      console.error('Error loading visits:', visitsError);
       toast({
         title: "Error",
-        description: "Failed to load visits data",
+        description: `Failed to load visits data: ${visitsError.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } else {
@@ -106,9 +107,10 @@ const AnalyticsTab = () => {
     const leadsError = oldLeadsResult.error || newLeadsResult.error;
 
     if (leadsError) {
+      console.error('Error loading leads:', leadsError);
       toast({
         title: "Error",
-        description: "Failed to load leads data",
+        description: `Failed to load leads data: ${leadsError.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } else {
