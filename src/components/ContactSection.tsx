@@ -22,7 +22,7 @@ type Channel = "whatsapp" | "viber" | "email" | "phone" | "messenger";
 // Helper component to render country flags
 const CountryFlag = ({ countryCode }: { countryCode: string }) => {
   try {
-    const FlagComponent = (Flags as any)[countryCode];
+    const FlagComponent = (Flags as Record<string, React.ComponentType<{ className?: string; title?: string }>>)[countryCode];
     if (!FlagComponent) return null;
     return <FlagComponent className="w-5 h-4 object-cover rounded-sm" title={countryCode} />;
   } catch (error) {
@@ -124,7 +124,15 @@ const ContactSection = () => {
     }
 
     // Basic rate limiting - client side
-    const lastSubmitTime = localStorage.getItem("lastContactSubmit");
+    // Wrap in try-catch to handle Safari private browsing mode
+    let lastSubmitTime: string | null = null;
+    try {
+      lastSubmitTime = localStorage.getItem("lastContactSubmit");
+    } catch (error) {
+      // Safari private browsing mode or localStorage disabled
+      console.warn("localStorage not available, skipping rate limit check:", error);
+    }
+    
     if (lastSubmitTime) {
       const timeSinceLastSubmit = Date.now() - parseInt(lastSubmitTime);
       if (timeSinceLastSubmit < 3000) { // 3 seconds
@@ -143,7 +151,7 @@ const ContactSection = () => {
       const actualDialCode = selectedCountry?.dialCode || countryCode;
       
       // Clean phone number: remove leading zeros and spaces
-      let cleanedPhone = phone.trim().replace(/^0+/, '');
+      const cleanedPhone = phone.trim().replace(/^0+/, '');
       
       // Combine country code and phone number
       const fullPhone = cleanedPhone ? `${actualDialCode}${cleanedPhone}` : undefined;
@@ -199,22 +207,49 @@ const ContactSection = () => {
 
         const result = await leadsService.createLead(leadData);
 
+        // Check if save failed - if so, show error and prevent redirect
         if (result.error) {
           console.error('❌ Error saving lead:', result.error);
           console.error('Error details:', JSON.stringify(result.error, null, 2));
-        } else {
-          console.log('✅ Lead saved successfully!');
-          console.log('Saved lead data:', {
-            id: result.data?.id,
-            name: result.data?.name,
-            country: result.data?.country,
-            region: result.data?.region,
-            city: result.data?.city,
+          
+          // Show error message to user and keep them on the page
+          toast({
+            title: "Failed to save your message",
+            description: result.error.message || "There was an error saving your information. Please try again or contact us directly.",
+            variant: "destructive",
           });
+          
+          // Prevent redirect on error - keep user on page
+          return;
         }
 
-        // Set rate limit timestamp
-        localStorage.setItem("lastContactSubmit", Date.now().toString());
+        // Verify save was successful before proceeding
+        if (!result.data) {
+          console.error('❌ No data returned from save operation');
+          toast({
+            title: "Failed to save your message",
+            description: "Your message could not be saved. Please try again or contact us directly.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('✅ Lead saved successfully!');
+        console.log('Saved lead data:', {
+          id: result.data.id,
+          name: result.data.name,
+          country: result.data.country,
+          region: result.data.region,
+          city: result.data.city,
+        });
+
+        // Set rate limit timestamp - wrap in try-catch for Safari private mode
+        try {
+          localStorage.setItem("lastContactSubmit", Date.now().toString());
+        } catch (error) {
+          // Safari private browsing mode or localStorage disabled - continue anyway
+          console.warn("Could not set rate limit timestamp:", error);
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -237,7 +272,7 @@ const ContactSection = () => {
     const actualDialCode = selectedCountry?.dialCode || countryCode;
     
     // Clean phone number: remove leading zeros and spaces
-    let cleanedPhone = phone.trim().replace(/^0+/, '');
+    const cleanedPhone = phone.trim().replace(/^0+/, '');
     
     const fullPhone = cleanedPhone ? `${actualDialCode}${cleanedPhone}` : "";
     const encodedMessage = encodeURIComponent(
@@ -261,9 +296,23 @@ const ContactSection = () => {
     }
 
     if (url) {
-      console.log("Redirecting to:", url);
-      // Use direct navigation instead of window.open for better mobile support
-      window.location.href = url;
+      // Only redirect if we're not in the database save path (phone channel) 
+      // OR if database save was successful (for other channels)
+      // For non-phone channels, the redirect only happens if save succeeded (checked above)
+      
+      // Show success message before redirect
+      toast({
+        title: "Message sent!",
+        description: "Redirecting you to continue the conversation...",
+      });
+
+      // Add small delay before redirect to ensure async operations complete
+      // This is especially important for Safari which can interrupt async operations
+      setTimeout(() => {
+        console.log("Redirecting to:", url);
+        // Use direct navigation instead of window.open for better mobile support
+        window.location.href = url;
+      }, 150); // 150ms delay to ensure database operations complete
     }
   };
 
