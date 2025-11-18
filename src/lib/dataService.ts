@@ -164,9 +164,8 @@ export const leadsService = {
 
     console.log('📤 Inserting lead data:', JSON.stringify(insertData, null, 2));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from("contact_submissions")
+    const { data, error } = await supabase
+      .from("leads")
       .insert(insertData)
       .select()
       .single();
@@ -186,22 +185,8 @@ export const leadsService = {
       };
     }
     
-    // Create notification manually (non-blocking) if lead was saved successfully
-    // This replaces the database trigger which was causing RLS issues
-    if (data) {
-      // Fire and forget - don't block the response
-      // Import dynamically to avoid circular dependencies
-      setTimeout(() => {
-        import('@/lib/notificationService')
-          .then(({ notifyNewLead }) => {
-            // notifyNewLead doesn't return a promise, so just call it
-            notifyNewLead((data as Lead).name, (data as Lead).id);
-          })
-          .catch(() => {
-            // Ignore import errors - notifications are optional
-          });
-      }, 0);
-    }
+    // Notification is handled automatically by the database trigger
+    // No need to call it manually anymore
     
     return { data, error: null };
   },
@@ -245,51 +230,51 @@ export const leadsService = {
   },
 
   async updateLead(id: string, updates: LeadUpdate) {
-    // Try new table first, then fall back to old table
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newResult = await (supabase as any)
-      .from("contact_submissions")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (newResult.data) {
-      return { data: newResult.data, error: null };
-    }
-
-    // Fall back to old leads table
-    const oldResult = await supabase
+    // Try leads table first, then fall back to contact_submissions
+    const leadsResult = await supabase
       .from("leads")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
 
-    return { data: oldResult.data, error: oldResult.error };
+    if (leadsResult.data) {
+      return { data: leadsResult.data, error: null };
+    }
+
+    // Fall back to contact_submissions table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contactResult = await (supabase as any)
+      .from("contact_submissions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    return { data: contactResult.data, error: contactResult.error };
   },
 
   async getLeadById(id: string): Promise<{ data: Lead | null; error: Error | null }> {
-    // Try new table first, then fall back to old table
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newResult = await (supabase as any)
-      .from("contact_submissions")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (newResult.data) {
-      return { data: newResult.data as Lead, error: null };
-    }
-
-    // Fall back to old leads table
-    const oldResult = await supabase
+    // Try leads table first, then fall back to contact_submissions
+    const leadsResult = await supabase
       .from("leads")
       .select("*")
       .eq("id", id)
       .single();
 
-    return { data: oldResult.data as Lead | null, error: oldResult.error };
+    if (leadsResult.data) {
+      return { data: leadsResult.data as Lead, error: null };
+    }
+
+    // Fall back to contact_submissions table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contactResult = await (supabase as any)
+      .from("contact_submissions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    return { data: contactResult.data as Lead | null, error: contactResult.error };
   },
 };
 
