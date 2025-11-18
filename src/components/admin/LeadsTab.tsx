@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -51,71 +51,114 @@ const LeadsTab = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadLeads();
-    loadAllLeads(); // For stats and sources
-  }, [page, pageSize]);
+  const loadLeads = useCallback(async () => {
+    // Fetch from both tables and combine
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false }),
+    ]);
 
-  useEffect(() => {
-    // Reset to page 1 when filters change
-    setPage(1);
-  }, [searchQuery, statusFilter, sourceFilter]);
+    // Combine results
+    const allLeads: Lead[] = [];
+    let totalCount = 0;
 
-  useEffect(() => {
-    // Load data when page resets or filters change
-    loadLeads();
-    loadAllLeads();
-  }, [page, searchQuery, statusFilter, sourceFilter]);
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+      totalCount += oldLeadsResult.count || 0;
+    }
 
-  const loadLeads = async () => {
-    let query = supabase
-      .from("leads")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+      totalCount += newLeadsResult.count || 0;
+    }
 
-    // Apply filters
+    // Apply filters to combined data
+    let filteredLeads = allLeads;
+
     if (searchQuery) {
       const search = searchQuery.toLowerCase();
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+      filteredLeads = filteredLeads.filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(search) ||
+          (lead.phone && lead.phone.toLowerCase().includes(search))
+      );
     }
 
     if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      filteredLeads = filteredLeads.filter((lead) => lead.status === statusFilter);
     }
 
     if (sourceFilter !== "all") {
-      query = query.eq("where_did_you_find_us", sourceFilter);
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.where_did_you_find_us === sourceFilter
+      );
     }
+
+    // Sort by created_at descending
+    filteredLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
     // Apply pagination
     const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
+    const to = from + pageSize;
+    const paginatedLeads = filteredLeads.slice(from, to);
 
-    const { data, error, count } = await query;
-
-    if (error) {
+    if (oldLeadsResult.error || newLeadsResult.error) {
       toast({
         title: "Error",
         description: "Failed to load leads",
         variant: "destructive",
       });
     } else {
-      setLeads(data as Lead[] || []);
-      setTotalCount(count || 0);
+      setLeads(paginatedLeads);
+      setTotalCount(filteredLeads.length);
     }
-  };
+  }, [page, pageSize, searchQuery, statusFilter, sourceFilter, toast]);
 
-  const loadAllLeads = async () => {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const loadAllLeads = useCallback(async () => {
+    // Fetch from both tables
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
 
-    if (!error && data) {
-      setAllLeads(data as Lead[]);
+    // Combine results
+    const allLeads: Lead[] = [];
+
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
     }
-  };
+
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Sort by created_at descending
+    allLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    if (!oldLeadsResult.error && !newLeadsResult.error) {
+      setAllLeads(allLeads);
+    }
+  }, []);
 
   const openLeadDetails = (lead: Lead) => {
     setSelectedLead(lead);
@@ -164,14 +207,16 @@ const LeadsTab = () => {
 
     let url = "";
     switch (lead.contact_method) {
-      case "whatsapp":
+      case "whatsapp": {
         const whatsappPhone = formatPhoneForUrl(lead.phone);
         url = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
         break;
-      case "viber":
+      }
+      case "viber": {
         const viberPhone = formatPhoneForUrl(lead.phone).replace("+", "%2B");
         url = `viber://contact?number=${viberPhone}`;
         break;
+      }
       case "email":
         url = `mailto:technofyph@gmail.com?subject=Re: Your Inquiry&body=${encodedMessage}`;
         break;
@@ -186,27 +231,58 @@ const LeadsTab = () => {
   };
 
   const exportToCSV = async () => {
-    // Fetch ALL filtered results, not just current page
-    let query = supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
+    // Fetch from both tables
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
 
-    // Apply same filters
+    // Combine results
+    const allLeads: Lead[] = [];
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+    }
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Apply filters
+    let filteredLeads = allLeads;
+
     if (searchQuery) {
       const search = searchQuery.toLowerCase();
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+      filteredLeads = filteredLeads.filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(search) ||
+          (lead.phone && lead.phone.toLowerCase().includes(search))
+      );
     }
 
     if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      filteredLeads = filteredLeads.filter((lead) => lead.status === statusFilter);
     }
 
     if (sourceFilter !== "all") {
-      query = query.eq("where_did_you_find_us", sourceFilter);
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.where_did_you_find_us === sourceFilter
+      );
     }
 
-    const { data: allFilteredLeads, error } = await query;
+    // Sort by created_at descending
+    filteredLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    const allFilteredLeads = filteredLeads;
+    const error = oldLeadsResult.error || newLeadsResult.error;
 
     if (error || !allFilteredLeads || allFilteredLeads.length === 0) {
       toast({
@@ -293,10 +369,21 @@ const LeadsTab = () => {
     if (!leadToDelete) return;
 
     setIsDeleting(true);
-    const { error } = await supabase
-      .from("leads")
+    
+    // Try deleting from new table first, then old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let error = (await (supabase as any)
+      .from("contact_submissions")
       .delete()
-      .eq("id", leadToDelete.id);
+      .eq("id", leadToDelete.id)).error;
+
+    // If not found in new table, try old table
+    if (error) {
+      error = (await supabase
+        .from("leads")
+        .delete()
+        .eq("id", leadToDelete.id)).error;
+    }
 
     if (error) {
       toast({
@@ -638,7 +725,7 @@ const LeadsTab = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+                  <Select value={status} onValueChange={(v: "New" | "Follow Up" | "Closed") => setStatus(v)}>
                     <SelectTrigger id="status" className="border-gray-300">
                       <SelectValue />
                     </SelectTrigger>
