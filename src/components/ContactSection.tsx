@@ -68,6 +68,32 @@ const countryCodes = [
   { code: "+7", country: "Russia", isoCode: "RU" },
 ];
 
+// Browser detection function
+const detectBrowser = (): { name: string; isLocationBlocked: boolean } => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  // Check for Safari (including mobile Safari)
+  const isSafari = /safari/.test(userAgent) && /^((?!chrome|android|fxios).)*$/.test(userAgent);
+  
+  // Check for Opera
+  const isOpera = /opera|opr/.test(userAgent);
+  
+  // Check for Opera-based browsers (like Opera GX)
+  const isOperaBased = /opr|opera/.test(userAgent);
+  
+  if (isSafari || isOpera || isOperaBased) {
+    return { 
+      name: isSafari ? 'Safari' : 'Opera', 
+      isLocationBlocked: true 
+    };
+  }
+  
+  return { 
+    name: 'Other', 
+    isLocationBlocked: false 
+  };
+};
+
 const ContactSection = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel>("whatsapp");
   const [name, setName] = useState("");
@@ -81,8 +107,18 @@ const ContactSection = () => {
   const [userLocation, setUserLocation] = useState<{ country: string | null; region: string | null; city: string | null } | null>(null);
   const { toast } = useToast();
 
-  // Pre-fetch location when component mounts
+  // Pre-fetch location when component mounts (only if browser supports it)
   useEffect(() => {
+    // Detect browser
+    const browserInfo = detectBrowser();
+    
+    // Skip location fetch for Safari and Opera browsers
+    if (browserInfo.isLocationBlocked) {
+      console.log(`🚫 Location fetch skipped for ${browserInfo.name} browser`);
+      setUserLocation({ country: null, region: null, city: null });
+      return;
+    }
+
     const fetchLocation = async () => {
       try {
         console.log('📍 Pre-fetching user location...');
@@ -91,6 +127,8 @@ const ContactSection = () => {
         console.log('✅ Location pre-fetched:', location);
       } catch (error) {
         console.error('❌ Failed to pre-fetch location:', error);
+        // Set empty location on error
+        setUserLocation({ country: null, region: null, city: null });
       }
     };
     
@@ -160,11 +198,14 @@ const ContactSection = () => {
 
       // Save to database ONLY for whatsapp, viber, messenger, email (NOT phone)
       if (selectedChannel !== "phone") {
-        // Use pre-fetched location or fetch now if not available
+        // Detect browser to check if location is blocked
+        const browserInfo = detectBrowser();
+        
+        // Check if browser blocks location (Safari/Opera)
         let location = userLocation || { country: null, region: null, city: null };
         
-        // If we don't have location yet, try to fetch it now
-        if (!location.country && !location.city) {
+        // Only try to fetch location if browser supports it and we don't have it yet
+        if (!browserInfo.isLocationBlocked && !location.country && !location.city) {
           console.log('📍 Location not pre-fetched, fetching now...');
           try {
             location = await getUserLocation();
@@ -173,11 +214,16 @@ const ContactSection = () => {
           } catch (error) {
             console.error('❌ Failed to get location during submission:', error);
             // Continue with empty location if fetch fails
+            location = { country: null, region: null, city: null };
           }
+        } else if (browserInfo.isLocationBlocked) {
+          console.log(`🚫 Skipping location fetch for ${browserInfo.name} browser`);
+          location = { country: null, region: null, city: null };
         } else {
           console.log('✅ Using pre-fetched location:', location);
         }
 
+        // Save form data to database (with or without location)
         const leadData = {
           name: validatedData.name,
           phone: validatedData.phone,
@@ -187,21 +233,37 @@ const ContactSection = () => {
           country: location.country,
           region: location.region,
           city: location.city,
-          geo_source: 'ip',
+          geo_source: browserInfo.isLocationBlocked ? 'blocked' : 'ip',
         };
 
-        console.log('💾 Saving lead with location data:', {
+        console.log('💾 Attempting to save lead data:', {
           name: leadData.name,
+          phone: leadData.phone,
+          message: leadData.message,
+          contact_method: leadData.contact_method,
+          browser: browserInfo.name,
+          locationBlocked: browserInfo.isLocationBlocked,
           country: leadData.country,
           region: leadData.region,
           city: leadData.city,
+          geo_source: leadData.geo_source,
         });
 
+        console.log('📤 Calling leadsService.createLead...');
         const result = await leadsService.createLead(leadData);
+        console.log('📥 Response from createLead:', result);
 
         if (result.error) {
           console.error('❌ Error saving lead:', result.error);
           console.error('Error details:', JSON.stringify(result.error, null, 2));
+          console.error('Error message:', result.error.message);
+          console.error('Full error object:', result.error);
+          
+          // Log the lead data that failed to save
+          console.error('Failed lead data:', leadData);
+          
+          // Still continue with redirect even if save fails (don't block user)
+          // But log the error for debugging
         } else {
           console.log('✅ Lead saved successfully!');
           console.log('Saved lead data:', {
@@ -217,6 +279,7 @@ const ContactSection = () => {
         localStorage.setItem("lastContactSubmit", Date.now().toString());
       }
     } catch (error) {
+      console.error('❌ Exception during form submission:', error);
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation error",
@@ -233,6 +296,7 @@ const ContactSection = () => {
       return;
     }
 
+    // Continue with redirect after database save (whether successful or not)
     const selectedCountry = countryCodes.find(c => c.code === countryCode);
     const actualDialCode = selectedCountry?.dialCode || countryCode;
     
@@ -263,7 +327,16 @@ const ContactSection = () => {
     if (url) {
       console.log("Redirecting to:", url);
       // Use direct navigation instead of window.open for better mobile support
-      window.location.href = url;
+      // Small delay to ensure database save completes and avoid console warnings
+      setTimeout(() => {
+        try {
+          window.location.href = url;
+        } catch (error) {
+          console.error("Redirect error:", error);
+          // Fallback: try opening in new window
+          window.open(url, '_blank');
+        }
+      }, 100);
     }
   };
 

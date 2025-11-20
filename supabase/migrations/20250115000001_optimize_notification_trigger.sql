@@ -1,20 +1,7 @@
--- Create security definer function to get all admin user IDs
--- This allows the notification service to query admin users without RLS restrictions
-CREATE OR REPLACE FUNCTION get_admin_user_ids()
-RETURNS TABLE(user_id UUID)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT ur.user_id
-  FROM user_roles ur
-  WHERE ur.role = 'admin';
-END;
-$$;
+-- Optimize notification trigger for fastest possible delivery
+-- This migration updates the trigger to use a single INSERT instead of a loop
 
--- Create function to notify admins when a new lead is created
+-- Create optimized function to notify admins when a new lead is created
 -- OPTIMIZED: Single INSERT instead of loop for maximum speed
 CREATE OR REPLACE FUNCTION notify_new_lead()
 RETURNS TRIGGER
@@ -24,6 +11,7 @@ SET search_path = public
 AS $$
 BEGIN
   -- Single INSERT for all admin users - MUCH FASTER than loop
+  -- This executes in a single database operation instead of multiple
   INSERT INTO admin_notifications (
     type,
     title,
@@ -46,10 +34,17 @@ BEGIN
 END;
 $$;
 
--- Create trigger that fires after a lead is inserted
+-- Ensure trigger is active and optimized
 DROP TRIGGER IF EXISTS trigger_notify_new_lead ON leads;
 CREATE TRIGGER trigger_notify_new_lead
   AFTER INSERT ON leads
   FOR EACH ROW
   EXECUTE FUNCTION notify_new_lead();
+
+-- Add index on admin_notifications for faster realtime delivery
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_user_id_created_at 
+ON admin_notifications(user_id, created_at DESC);
+
+-- Ensure realtime is enabled for instant delivery
+ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS admin_notifications;
 

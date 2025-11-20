@@ -249,6 +249,7 @@ export const useNotifications = () => {
   };
 
   // Show toast notification (this is the main notification display)
+  // OPTIMIZED: Instant display with no async delays
   const showToast = async (notification: Notification) => {
     if (isInDNDMode()) return;
 
@@ -261,21 +262,19 @@ export const useNotifications = () => {
 
     const config = typeConfig[notification.type];
     
-    // Play sound
-    playSound();
+    // Play sound immediately (non-blocking)
+    playSound().catch(() => {}); // Don't wait for sound, show notification instantly
     
-    // If desktop notifications are enabled, use desktop notification system
-    // (which will show native if available, otherwise fallback toast)
-    // Otherwise, show regular toast
+    // Show toast IMMEDIATELY - don't wait for desktop notification
+    toast(notification.title, {
+      description: notification.message,
+      icon: config.icon,
+      duration: 4000,
+    });
+    
+    // If desktop notifications are enabled, show them too (but don't wait)
     if (settings.desktop_push) {
-      await showDesktopNotification(notification.title, notification.message);
-    } else {
-      // Desktop notifications disabled, show regular toast
-      toast(notification.title, {
-        description: notification.message,
-        icon: config.icon,
-        duration: 4000,
-      });
+      showDesktopNotification(notification.title, notification.message).catch(() => {});
     }
   };
 
@@ -539,9 +538,20 @@ export const useNotifications = () => {
 
     init();
 
-    // Subscribe to realtime changes
+    // Subscribe to realtime changes - OPTIMIZED for instant delivery
+    let currentUserId: string | null = null;
+    
+    // Get current user ID once
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      currentUserId = user?.id || null;
+    });
+
     const channel = supabase
-      .channel("admin_notifications_changes")
+      .channel("admin_notifications_changes", {
+        config: {
+          broadcast: { self: true }, // Receive own broadcasts
+        }
+      })
       .on(
         "postgres_changes",
         {
@@ -550,10 +560,21 @@ export const useNotifications = () => {
           table: "admin_notifications",
         },
         (payload) => {
+          // IMMEDIATE processing - no delays, no async waits
           const newNotification = payload.new as Notification;
-          setNotifications((prev) => [newNotification, ...prev]);
-          setUnreadCount((prev) => prev + 1);
-          showToast(newNotification);
+          
+          // Check if notification is for current user (if we have user ID)
+          if (!currentUserId || newNotification.user_id === currentUserId) {
+            // Update state immediately - synchronous operations only
+            setNotifications((prev) => {
+              // Avoid duplicates
+              if (prev.some(n => n.id === newNotification.id)) return prev;
+              return [newNotification, ...prev];
+            });
+            setUnreadCount((prev) => prev + 1);
+            // Show notification instantly - no delays
+            showToast(newNotification);
+          }
         }
       )
       .on(
@@ -576,7 +597,13 @@ export const useNotifications = () => {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime notifications active - instant delivery enabled');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime channel error - notifications may be delayed');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
