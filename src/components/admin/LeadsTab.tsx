@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const LeadsTab = () => {
+  console.log('🎯 LeadsTab component rendering...');
+  
   const [leads, setLeads] = useState<Lead[]>([]);
   const [allLeads, setAllLeads] = useState<Lead[]>([]); // For stats and sources
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,71 +53,184 @@ const LeadsTab = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
+  const loadLeads = useCallback(async () => {
+    // Check authentication first
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔐 Admin session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      email: session?.user?.email
+    });
+
+    // Fetch from both tables and combine
+    console.log('🔍 Loading leads from both tables...');
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false }),
+    ]);
+
+    console.log('📊 Leads query results:', {
+      oldLeads: {
+        data: oldLeadsResult.data?.length || 0,
+        error: oldLeadsResult.error,
+        count: oldLeadsResult.count
+      },
+      newLeads: {
+        data: newLeadsResult.data?.length || 0,
+        error: newLeadsResult.error,
+        count: newLeadsResult.count
+      }
+    });
+
+    // Combine results
+    const allLeads: Lead[] = [];
+    let totalCount = 0;
+
+    if (oldLeadsResult.data) {
+      console.log('✅ Old leads data received:', oldLeadsResult.data.length, 'records');
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+      totalCount += oldLeadsResult.count || 0;
+    } else {
+      console.log('⚠️ Old leads data is null or undefined');
+    }
+
+    if (newLeadsResult.data) {
+      console.log('✅ New leads (contact_submissions) data received:', newLeadsResult.data.length, 'records');
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+      totalCount += newLeadsResult.count || 0;
+    } else {
+      console.log('⚠️ New leads (contact_submissions) data is null or undefined');
+      if (newLeadsResult.error) {
+        console.error('❌ Contact submissions error:', newLeadsResult.error);
+      }
+    }
+
+    // Apply filters to combined data
+    let filteredLeads = allLeads;
+
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filteredLeads = filteredLeads.filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(search) ||
+          (lead.phone && lead.phone.toLowerCase().includes(search))
+      );
+    }
+
+    if (statusFilter !== "all") {
+      filteredLeads = filteredLeads.filter((lead) => lead.status === statusFilter);
+    }
+
+    if (sourceFilter !== "all") {
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.where_did_you_find_us === sourceFilter
+      );
+    }
+
+    // Sort by created_at descending
+    filteredLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize;
+    const paginatedLeads = filteredLeads.slice(from, to);
+
+    if (oldLeadsResult.error || newLeadsResult.error) {
+      console.error('Error loading leads:', {
+        oldLeadsError: oldLeadsResult.error,
+        newLeadsError: newLeadsResult.error
+      });
+      toast({
+        title: "Error",
+        description: `Failed to load leads: ${oldLeadsResult.error?.message || newLeadsResult.error?.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    } else {
+      console.log('✅ Successfully loaded leads:', {
+        totalCombined: allLeads.length,
+        filtered: filteredLeads.length,
+        paginated: paginatedLeads.length,
+        totalCount: filteredLeads.length
+      });
+      setLeads(paginatedLeads);
+      setTotalCount(filteredLeads.length);
+    }
+  }, [page, pageSize, searchQuery, statusFilter, sourceFilter, toast]);
+
+  const loadAllLeads = useCallback(async () => {
+    // Fetch from both tables
+    console.log('🔍 Loading all leads for stats...');
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    console.log('📊 All leads query results:', {
+      oldLeads: {
+        data: oldLeadsResult.data?.length || 0,
+        error: oldLeadsResult.error
+      },
+      newLeads: {
+        data: newLeadsResult.data?.length || 0,
+        error: newLeadsResult.error
+      }
+    });
+
+    // Combine results
+    const allLeads: Lead[] = [];
+
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+    }
+
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Sort by created_at descending
+    allLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    if (oldLeadsResult.error || newLeadsResult.error) {
+      console.error('Error loading all leads:', {
+        oldLeadsError: oldLeadsResult.error,
+        newLeadsError: newLeadsResult.error
+      });
+    } else {
+      setAllLeads(allLeads);
+    }
+  }, []);
+
+  // Load data on mount and when dependencies change
   useEffect(() => {
+    console.log('🚀 LeadsTab useEffect triggered');
     loadLeads();
-    loadAllLeads(); // For stats and sources
-  }, [page, pageSize]);
+    loadAllLeads();
+  }, [loadLeads, loadAllLeads]);
 
   useEffect(() => {
     // Reset to page 1 when filters change
     setPage(1);
   }, [searchQuery, statusFilter, sourceFilter]);
-
-  useEffect(() => {
-    // Load data when page resets or filters change
-    loadLeads();
-    loadAllLeads();
-  }, [page, searchQuery, statusFilter, sourceFilter]);
-
-  const loadLeads = async () => {
-    let query = supabase
-      .from("leads")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
-
-    // Apply filters
-    if (searchQuery) {
-      const search = searchQuery.toLowerCase();
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
-    }
-
-    if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
-    }
-
-    if (sourceFilter !== "all") {
-      query = query.eq("where_did_you_find_us", sourceFilter);
-    }
-
-    // Apply pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load leads",
-        variant: "destructive",
-      });
-    } else {
-      setLeads(data as Lead[] || []);
-      setTotalCount(count || 0);
-    }
-  };
-
-  const loadAllLeads = async () => {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setAllLeads(data as Lead[]);
-    }
-  };
 
   const openLeadDetails = (lead: Lead) => {
     setSelectedLead(lead);
@@ -164,14 +279,16 @@ const LeadsTab = () => {
 
     let url = "";
     switch (lead.contact_method) {
-      case "whatsapp":
+      case "whatsapp": {
         const whatsappPhone = formatPhoneForUrl(lead.phone);
         url = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
         break;
-      case "viber":
+      }
+      case "viber": {
         const viberPhone = formatPhoneForUrl(lead.phone).replace("+", "%2B");
         url = `viber://contact?number=${viberPhone}`;
         break;
+      }
       case "email":
         url = `mailto:technofyph@gmail.com?subject=Re: Your Inquiry&body=${encodedMessage}`;
         break;
@@ -186,27 +303,58 @@ const LeadsTab = () => {
   };
 
   const exportToCSV = async () => {
-    // Fetch ALL filtered results, not just current page
-    let query = supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
+    // Fetch from both tables
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
 
-    // Apply same filters
+    // Combine results
+    const allLeads: Lead[] = [];
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+    }
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Apply filters
+    let filteredLeads = allLeads;
+
     if (searchQuery) {
       const search = searchQuery.toLowerCase();
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+      filteredLeads = filteredLeads.filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(search) ||
+          (lead.phone && lead.phone.toLowerCase().includes(search))
+      );
     }
 
     if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      filteredLeads = filteredLeads.filter((lead) => lead.status === statusFilter);
     }
 
     if (sourceFilter !== "all") {
-      query = query.eq("where_did_you_find_us", sourceFilter);
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.where_did_you_find_us === sourceFilter
+      );
     }
 
-    const { data: allFilteredLeads, error } = await query;
+    // Sort by created_at descending
+    filteredLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    const allFilteredLeads = filteredLeads;
+    const error = oldLeadsResult.error || newLeadsResult.error;
 
     if (error || !allFilteredLeads || allFilteredLeads.length === 0) {
       toast({
@@ -293,10 +441,21 @@ const LeadsTab = () => {
     if (!leadToDelete) return;
 
     setIsDeleting(true);
-    const { error } = await supabase
-      .from("leads")
+    
+    // Try deleting from new table first, then old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let error = (await (supabase as any)
+      .from("contact_submissions")
       .delete()
-      .eq("id", leadToDelete.id);
+      .eq("id", leadToDelete.id)).error;
+
+    // If not found in new table, try old table
+    if (error) {
+      error = (await supabase
+        .from("leads")
+        .delete()
+        .eq("id", leadToDelete.id)).error;
+    }
 
     if (error) {
       toast({
@@ -363,8 +522,17 @@ const LeadsTab = () => {
     });
   };
 
+  // Debug: Log component render
+  console.log('🎯 LeadsTab render - leads count:', leads.length, 'allLeads count:', allLeads.length);
+
   return (
     <div className="space-y-6">
+      {/* Debug indicator - remove after testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 p-2 text-xs">
+          🔍 Debug: LeadsTab loaded | Leads: {leads.length} | AllLeads: {allLeads.length} | TotalCount: {totalCount}
+        </div>
+      )}
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="border border-gray-200 p-6 rounded-lg bg-white">
@@ -638,7 +806,7 @@ const LeadsTab = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+                  <Select value={status} onValueChange={(v: "New" | "Follow Up" | "Closed") => setStatus(v)}>
                     <SelectTrigger id="status" className="border-gray-300">
                       <SelectValue />
                     </SelectTrigger>

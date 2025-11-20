@@ -16,7 +16,7 @@ export const contactSchema = z.object({
     .max(255, "Email must be less than 255 characters")
     .optional(),
   phone: z.string()
-    .regex(/^[\+]?[0-9\s\-()]+$/, "Phone number contains invalid characters")
+    .regex(/^[+]?[0-9\s\-()]+$/, "Phone number contains invalid characters")
     .min(7, "Phone number is too short")
     .max(20, "Phone number is too long")
     .optional(),
@@ -83,7 +83,7 @@ export const authService = {
     return { error };
   },
 
-  async getSession(): Promise<{ session: Session | null; error: any }> {
+  async getSession(): Promise<{ session: Session | null; error: Error | null }> {
     const { data, error } = await supabase.auth.getSession();
     return { session: data.session, error };
   },
@@ -126,49 +126,170 @@ export const leadsService = {
       return { data: null, error: error as Error };
     }
 
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({
-        name: lead.name.trim().slice(0, 100),
-        phone: lead.phone?.trim().slice(0, 20) || null,
-        message: lead.message.trim().slice(0, 2000),
-        where_did_you_find_us: lead.where_did_you_find_us?.trim().slice(0, 100) || null,
-        contact_method: lead.contact_method,
-        country: lead.country || null,
-        region: lead.region || null,
-        city: lead.city || null,
-        geo_source: lead.geo_source || 'ip',
-      })
+    // Ensure we're using anon role for anonymous inserts
+    // Check current session - if authenticated, we might need to use anon client
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      console.warn('⚠️ User is authenticated. For contact form, we should use anon role.');
+      // For contact form submissions, we want to use anon role
+      // But since the policy allows both anon and authenticated, this should still work
+    }
+
+    console.log('💾 Attempting to insert lead:', {
+      name: lead.name,
+      contact_method: lead.contact_method,
+      hasPhone: !!lead.phone,
+    });
+
+    // Log Supabase configuration for debugging
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔑 Supabase session:', {
+      hasSession: !!session,
+      userId: session?.user?.id || 'none',
+      role: 'anon (for contact form)',
+    });
+
+    // Prepare the data to insert
+    const insertData = {
+      name: lead.name.trim().slice(0, 100),
+      phone: lead.phone?.trim().slice(0, 20) || null,
+      message: lead.message.trim().slice(0, 2000),
+      where_did_you_find_us: lead.where_did_you_find_us?.trim().slice(0, 100) || null,
+      contact_method: lead.contact_method,
+      country: lead.country || null,
+      region: lead.region || null,
+      city: lead.city || null,
+      geo_source: lead.geo_source || 'ip',
+    };
+
+    console.log('📤 Inserting lead data:', JSON.stringify(insertData, null, 2));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("contact_submissions")
+      .insert(insertData)
       .select()
       .single();
-    return { data, error };
+    
+    // Improve error handling - extract better error messages
+    if (error) {
+      console.error('Supabase error saving lead:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      // Supabase errors can have different structures, extract message properly
+      const errorMessage = error.message || error.details || 'Failed to save lead to database';
+      return { 
+        data: null, 
+        error: new Error(errorMessage) 
+      };
+    }
+    
+    // Create notification manually (non-blocking) if lead was saved successfully
+    // This replaces the database trigger which was causing RLS issues
+    if (data) {
+      // Fire and forget - don't block the response
+      // Import dynamically to avoid circular dependencies
+      setTimeout(() => {
+        import('@/lib/notificationService')
+          .then(({ notifyNewLead }) => {
+            // notifyNewLead doesn't return a promise, so just call it
+            notifyNewLead((data as Lead).name, (data as Lead).id);
+          })
+          .catch(() => {
+            // Ignore import errors - notifications are optional
+          });
+      }, 0);
+    }
+    
+    return { data, error: null };
   },
 
-  async getAllLeads(): Promise<{ data: Lead[] | null; error: any }> {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-    return { data: data as Lead[] | null, error };
+  async getAllLeads(): Promise<{ data: Lead[] | null; error: Error | null }> {
+    // Fetch from both old leads table and new contact_submissions table
+    const [oldLeadsResult, newLeadsResult] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    // Combine results from both tables
+    const allLeads: Lead[] = [];
+    
+    if (oldLeadsResult.data) {
+      allLeads.push(...(oldLeadsResult.data as Lead[]));
+    }
+    
+    if (newLeadsResult.data) {
+      allLeads.push(...(newLeadsResult.data as Lead[]));
+    }
+
+    // Sort by created_at descending (newest first)
+    allLeads.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // Return error if both failed, otherwise return combined data
+    const error = oldLeadsResult.error && newLeadsResult.error 
+      ? oldLeadsResult.error 
+      : null;
+
+    return { data: allLeads.length > 0 ? allLeads : null, error };
   },
 
   async updateLead(id: string, updates: LeadUpdate) {
-    const { data, error } = await supabase
+    // Try new table first, then fall back to old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newResult = await (supabase as any)
+      .from("contact_submissions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (newResult.data) {
+      return { data: newResult.data, error: null };
+    }
+
+    // Fall back to old leads table
+    const oldResult = await supabase
       .from("leads")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
-    return { data, error };
+
+    return { data: oldResult.data, error: oldResult.error };
   },
 
-  async getLeadById(id: string): Promise<{ data: Lead | null; error: any }> {
-    const { data, error } = await supabase
+  async getLeadById(id: string): Promise<{ data: Lead | null; error: Error | null }> {
+    // Try new table first, then fall back to old table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newResult = await (supabase as any)
+      .from("contact_submissions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (newResult.data) {
+      return { data: newResult.data as Lead, error: null };
+    }
+
+    // Fall back to old leads table
+    const oldResult = await supabase
       .from("leads")
       .select("*")
       .eq("id", id)
       .single();
-    return { data: data as Lead | null, error };
+
+    return { data: oldResult.data as Lead | null, error: oldResult.error };
   },
 };
 
